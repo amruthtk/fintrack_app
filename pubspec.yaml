@@ -1,0 +1,60 @@
+name: fintrack_app
+description: "FinTrack - Smart Expense & Split Tracker"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.10.7
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Firebase
+  firebase_core: ^3.13.0
+  cloud_firestore: ^5.6.8
+
+  # State Management
+  provider: ^6.1.4
+
+  # Navigation
+  go_router: ^15.1.2
+
+  # Charts
+  fl_chart: ^1.0.0
+
+  # Camera / QR Scanner
+  mobile_scanner: ^7.0.2
+
+  # URL Launcher (UPI deep links)
+  url_launcher: ^6.3.1
+
+  # Typography
+  google_fonts: ^6.2.1
+
+  # Formatting
+  intl: ^0.20.2
+
+  # Animations
+  flutter_animate: ^4.5.2
+
+  # Local Storage
+  shared_preferences: ^2.5.3
+
+  # Icons
+  cupertino_icons: ^1.0.8
+  lucide_icons: ^0.257.0
+
+  # Image picker (avatar)
+  image_picker: ^1.1.2
+
+  # Share (CSV export)
+  share_plus: ^10.1.4
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
