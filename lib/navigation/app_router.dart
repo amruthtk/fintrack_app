@@ -85,12 +85,11 @@ GoRouter createRouter(AppProvider provider) {
             pageBuilder: (context, state) =>
                 const NoTransitionPage(child: DashboardScreen()),
           ),
-          GoRoute(
-            path: '/groups',
-            pageBuilder: (context, state) =>
-                const NoTransitionPage(child: GroupsScreen()),
-          ),
         ],
+      ),
+      GoRoute(
+        path: '/groups',
+        builder: (context, state) => const GroupsScreen(),
       ),
       GoRoute(path: '/scan', builder: (context, state) => const ScanScreen()),
       GoRoute(
