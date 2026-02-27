@@ -30,31 +30,36 @@ class Wallet {
   };
 }
 
+/// User model for FinTrack.
+/// Authentication (password) is managed by Firebase Auth.
+/// No password/pin is stored in the Firestore user document.
 class AppUser {
   final String id;
   final String username;
   final String name;
   final String phone;
+  final String? email;
   final String? avatarUrl;
   final String? avatarColor;
-  final String? password;
   final bool isPrivate;
   final List<Wallet> wallets;
   final String? upiId;
   final String? createdAt;
+  final bool? wealthCalibrationComplete;
 
   AppUser({
     required this.id,
     this.username = '',
     this.name = '',
     this.phone = '',
+    this.email,
     this.avatarUrl,
     this.avatarColor,
-    this.password,
     this.isPrivate = false,
     this.wallets = const [],
     this.upiId,
     this.createdAt,
+    this.wealthCalibrationComplete,
   });
 
   factory AppUser.fromFirestore(DocumentSnapshot doc) {
@@ -64,9 +69,9 @@ class AppUser {
       username: data['username'] ?? '',
       name: data['displayName'] ?? data['name'] ?? '',
       phone: data['phone'] ?? '',
+      email: data['email'],
       avatarUrl: data['avatarUrl'],
       avatarColor: data['avatarColor'],
-      password: data['password'],
       isPrivate: data['isPrivate'] ?? false,
       wallets:
           (data['wallets'] as List<dynamic>?)
@@ -75,6 +80,7 @@ class AppUser {
           [],
       upiId: data['upiId'],
       createdAt: data['createdAt']?.toString(),
+      wealthCalibrationComplete: data['wealthCalibrationComplete'] as bool?,
     );
   }
 
@@ -84,9 +90,9 @@ class AppUser {
       username: map['username'] ?? '',
       name: map['displayName'] ?? map['name'] ?? '',
       phone: map['phone'] ?? '',
+      email: map['email'],
       avatarUrl: map['avatarUrl'],
       avatarColor: map['avatarColor'],
-      password: map['password'],
       isPrivate: map['isPrivate'] ?? false,
       wallets:
           (map['wallets'] as List<dynamic>?)
@@ -95,6 +101,7 @@ class AppUser {
           [],
       upiId: map['upiId'],
       createdAt: map['createdAt']?.toString(),
+      wealthCalibrationComplete: map['wealthCalibrationComplete'] as bool?,
     );
   }
 
@@ -103,13 +110,14 @@ class AppUser {
     'username': username,
     'displayName': name,
     'phone': phone,
+    'email': email,
     'avatarUrl': avatarUrl,
     'avatarColor': avatarColor,
-    'password': password,
     'isPrivate': isPrivate,
     'wallets': wallets.map((w) => w.toMap()).toList(),
     'upiId': upiId,
     'createdAt': createdAt,
+    'wealthCalibrationComplete': wealthCalibrationComplete,
   };
 
   AppUser copyWith({
@@ -117,26 +125,29 @@ class AppUser {
     String? username,
     String? name,
     String? phone,
+    String? email,
     String? avatarUrl,
     String? avatarColor,
-    String? password,
     bool? isPrivate,
     List<Wallet>? wallets,
     String? upiId,
     String? createdAt,
+    bool? wealthCalibrationComplete,
   }) {
     return AppUser(
       id: id ?? this.id,
       username: username ?? this.username,
       name: name ?? this.name,
       phone: phone ?? this.phone,
+      email: email ?? this.email,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       avatarColor: avatarColor ?? this.avatarColor,
-      password: password ?? this.password,
       isPrivate: isPrivate ?? this.isPrivate,
       wallets: wallets ?? this.wallets,
       upiId: upiId ?? this.upiId,
       createdAt: createdAt ?? this.createdAt,
+      wealthCalibrationComplete:
+          wealthCalibrationComplete ?? this.wealthCalibrationComplete,
     );
   }
 
@@ -151,5 +162,7 @@ class AppUser {
         .substring(0, name.split(' ').length > 1 ? 2 : 1);
   }
 
-  double get totalBalance => wallets.fold(0.0, (total, w) => total + w.balance);
+  double get totalBalance => wallets
+      .where((w) => w.type != 'credit')
+      .fold(0.0, (total, w) => total + w.balance);
 }

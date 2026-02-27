@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
 import '../models/user.dart';
+import '../models/group.dart';
 
 class SplitFriendsScreen extends StatefulWidget {
   const SplitFriendsScreen({super.key});
@@ -20,6 +21,7 @@ class _SplitFriendsScreenState extends State<SplitFriendsScreen> {
   List<AppUser> _searchResults = [];
   bool _isSubmitting = false;
   String? _wallet;
+  String? _selectedGroupId;
 
   @override
   void dispose() {
@@ -55,6 +57,34 @@ class _SplitFriendsScreenState extends State<SplitFriendsScreen> {
       _members.add(_SplitMember(userId: user.id, name: user.name));
       _searchCtrl.clear();
       _searchResults = [];
+      _selectedGroupId = null; // Clear group selection if custom member added
+      _recalculate();
+    });
+  }
+
+  void _selectGroup(Group group) async {
+    final provider = context.read<AppProvider>();
+    List<AppUser> groupUsers = [];
+
+    // Fetch user details for group members
+    groupUsers = await provider.fetchUsersByIds(group.memberIds);
+
+    setState(() {
+      _selectedGroupId = group.id;
+      _members.clear();
+
+      // Add current user first (ensure they are the payer by default in this flow or follow existing)
+      final currentUser = provider.user;
+
+      for (final u in groupUsers) {
+        _members.add(
+          _SplitMember(
+            userId: u.id,
+            name: u.name,
+            isPayer: u.id == currentUser?.id,
+          ),
+        );
+      }
       _recalculate();
     });
   }
@@ -137,9 +167,10 @@ class _SplitFriendsScreenState extends State<SplitFriendsScreen> {
       }
     } catch (e) {
       if (mounted) {
+        final errorMsg = e.toString().replaceAll('Exception: ', '');
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+        ).showSnackBar(SnackBar(content: Text(errorMsg)));
       }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
@@ -175,7 +206,8 @@ class _SplitFriendsScreenState extends State<SplitFriendsScreen> {
               'Split Bill',
               style: TextStyle(
                 color: isDark ? Colors.white : const Color(0xFF0F172A),
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w900,
+                fontStyle: FontStyle.italic,
               ),
             ),
           ),
@@ -225,7 +257,93 @@ class _SplitFriendsScreenState extends State<SplitFriendsScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
+
+                // Group Selection
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Select Group',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        color: isDark ? Colors.white : const Color(0xFF0F172A),
+                      ),
+                    ),
+                    if (_selectedGroupId != null)
+                      TextButton.icon(
+                        onPressed: () =>
+                            context.push('/group/$_selectedGroupId'),
+                        icon: const Icon(
+                          Icons.settings_suggest_rounded,
+                          size: 16,
+                        ),
+                        label: const Text(
+                          'Manage Group',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                        style: TextButton.styleFrom(
+                          foregroundColor: const Color(0xFF6366F1),
+                          padding: EdgeInsets.zero,
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  height: 50,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: provider.groups.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 8),
+                    itemBuilder: (ctx, i) {
+                      final group = provider.groups[i];
+                      final active = _selectedGroupId == group.id;
+                      return GestureDetector(
+                        onTap: () => _selectGroup(group),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
+                          decoration: BoxDecoration(
+                            color: active
+                                ? const Color(0xFF6366F1)
+                                : (isDark
+                                      ? const Color(0xFF1E293B)
+                                      : Colors.white),
+                            borderRadius: BorderRadius.circular(12),
+                            border: active
+                                ? null
+                                : Border.all(
+                                    color: isDark
+                                        ? Colors.white10
+                                        : Colors.black12,
+                                  ),
+                          ),
+                          child: Row(
+                            children: [
+                              Text(group.emoji),
+                              const SizedBox(width: 6),
+                              Text(
+                                group.name,
+                                style: TextStyle(
+                                  color: active
+                                      ? Colors.white
+                                      : (isDark
+                                            ? Colors.white70
+                                            : Colors.black87),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+
+                const SizedBox(height: 24),
 
                 // Search & Add Friends
                 Text(

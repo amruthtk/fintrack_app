@@ -11,6 +11,16 @@ import '../screens/pool_detail_screen.dart';
 import '../screens/create_group_screen.dart';
 import '../screens/notifications_screen.dart';
 import '../screens/create_pool_screen.dart';
+import '../screens/profile_screen.dart';
+import '../screens/dashboard_screen.dart';
+import '../screens/groups_screen.dart';
+import '../screens/settlements_screen.dart';
+import '../screens/pools_screen.dart';
+import '../screens/scan_screen.dart';
+import '../screens/splash_screen.dart';
+import '../screens/group_details_screen.dart';
+import '../screens/subscriptions_screen.dart';
+import '../screens/security_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -26,17 +36,37 @@ GoRouter createRouter(AppProvider provider) {
 
   _cachedRouter = GoRouter(
     navigatorKey: _rootNavigatorKey,
-    initialLocation: '/',
+    initialLocation: '/splash',
     refreshListenable: provider,
     redirect: (context, state) {
-      final isLoggedIn = provider.user != null;
+      final user = provider.user;
+      final isLoggedIn = user != null;
+      final isSplashRoute = state.matchedLocation == '/splash';
       final isAuthRoute = state.matchedLocation == '/auth';
+      final isCalibrationRoute = state.matchedLocation == '/calibration';
+
+      // Allow splash to finish
+      if (isSplashRoute) return null;
 
       if (!isLoggedIn && !isAuthRoute) return '/auth';
-      if (isLoggedIn && isAuthRoute) return '/';
+      if (isLoggedIn) {
+        if (isAuthRoute) return '/';
+
+        // Redirection for calibration
+        final needsCalibration =
+            user.wealthCalibrationComplete != true &&
+            !user.wallets.any((w) => w.balance > 0);
+        if (needsCalibration && !isCalibrationRoute) {
+          return '/calibration';
+        }
+      }
       return null;
     },
     routes: [
+      GoRoute(
+        path: '/splash',
+        builder: (context, state) => const SplashScreen(),
+      ),
       GoRoute(path: '/auth', builder: (context, state) => const AuthScreen()),
       GoRoute(
         path: '/calibration',
@@ -48,24 +78,27 @@ GoRouter createRouter(AppProvider provider) {
           GoRoute(
             path: '/',
             pageBuilder: (context, state) =>
-                const NoTransitionPage(child: _DashboardPlaceholder()),
+                const NoTransitionPage(child: DashboardScreen()),
           ),
           GoRoute(
-            path: '/analytics',
+            path: '/groups',
             pageBuilder: (context, state) =>
-                const NoTransitionPage(child: _AnalyticsPlaceholder()),
-          ),
-          GoRoute(
-            path: '/social',
-            pageBuilder: (context, state) =>
-                const NoTransitionPage(child: _SocialPlaceholder()),
-          ),
-          GoRoute(
-            path: '/profile',
-            pageBuilder: (context, state) =>
-                const NoTransitionPage(child: _ProfilePlaceholder()),
+                const NoTransitionPage(child: GroupsScreen()),
           ),
         ],
+      ),
+      GoRoute(path: '/scan', builder: (context, state) => const ScanScreen()),
+      GoRoute(
+        path: '/settlements',
+        builder: (context, state) {
+          final initialTab = state.uri.queryParameters['tab'];
+          return SettlementsScreen(initialTab: initialTab);
+        },
+      ),
+      GoRoute(path: '/pools', builder: (context, state) => const PoolsScreen()),
+      GoRoute(
+        path: '/profile',
+        builder: (context, state) => const ProfileScreen(),
       ),
       GoRoute(
         path: '/add-bill',
@@ -80,7 +113,10 @@ GoRouter createRouter(AppProvider provider) {
       ),
       GoRoute(
         path: '/transactions',
-        builder: (context, state) => const TransactionsScreen(),
+        builder: (context, state) {
+          final wallet = state.uri.queryParameters['wallet'];
+          return TransactionsScreen(initialWallet: wallet);
+        },
       ),
       GoRoute(
         path: '/pool/:id',
@@ -101,32 +137,24 @@ GoRouter createRouter(AppProvider provider) {
         path: '/create-pool-bill',
         builder: (context, state) => const CreatePoolScreen(),
       ),
+      GoRoute(
+        path: '/group/:id',
+        builder: (context, state) {
+          final groupId = state.pathParameters['id'] ?? '';
+          return GroupDetailsScreen(groupId: groupId);
+        },
+      ),
+      GoRoute(
+        path: '/subscriptions',
+        builder: (context, state) => const SubscriptionsScreen(),
+      ),
+      GoRoute(
+        path: '/security',
+        builder: (context, state) => const SecurityScreen(),
+      ),
     ],
   );
   return _cachedRouter!;
 }
 
-// Thin wrappers — actual screens are loaded inside ShellScreen's IndexedStack
-class _DashboardPlaceholder extends StatelessWidget {
-  const _DashboardPlaceholder();
-  @override
-  Widget build(BuildContext context) => const SizedBox.shrink();
-}
-
-class _AnalyticsPlaceholder extends StatelessWidget {
-  const _AnalyticsPlaceholder();
-  @override
-  Widget build(BuildContext context) => const SizedBox.shrink();
-}
-
-class _SocialPlaceholder extends StatelessWidget {
-  const _SocialPlaceholder();
-  @override
-  Widget build(BuildContext context) => const SizedBox.shrink();
-}
-
-class _ProfilePlaceholder extends StatelessWidget {
-  const _ProfilePlaceholder();
-  @override
-  Widget build(BuildContext context) => const SizedBox.shrink();
-}
+// Shell placeholders are no longer needed as we use actual screens in the routes

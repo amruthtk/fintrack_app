@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:fl_chart/fl_chart.dart';
+
 import '../providers/app_provider.dart';
 import '../utils/helpers.dart';
 
@@ -38,30 +38,20 @@ class DashboardScreen extends StatelessWidget {
                   Row(
                     children: [
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              Helpers.getGreeting(),
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: isDark
-                                    ? const Color(0xFF94A3B8)
-                                    : const Color(0xFF64748B),
-                              ),
+                        child: ShaderMask(
+                          shaderCallback: (bounds) => const LinearGradient(
+                            colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                          ).createShader(bounds),
+                          child: const Text(
+                            'FinTrack',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w900,
+                              fontStyle: FontStyle.italic,
+                              color: Colors.white,
+                              letterSpacing: -0.5,
                             ),
-                            const SizedBox(height: 2),
-                            Text(
-                              user?.name ?? 'Guest',
-                              style: TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.w700,
-                                color: isDark
-                                    ? Colors.white
-                                    : const Color(0xFF0F172A),
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
                       ),
                       // Notification bell
@@ -115,31 +105,42 @@ class DashboardScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      // Privacy toggle
+                      // Profile button (Repositioned here)
                       GestureDetector(
-                        onTap: () => provider.isPrivate = !provider.isPrivate,
+                        onTap: () => context.push('/profile'),
                         child: Container(
-                          padding: const EdgeInsets.all(10),
+                          padding: const EdgeInsets.all(2),
                           decoration: BoxDecoration(
-                            color: isDark
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: isDark
+                                  ? const Color(
+                                      0xFF6366F1,
+                                    ).withValues(alpha: 0.5)
+                                  : const Color(
+                                      0xFF6366F1,
+                                    ).withValues(alpha: 0.3),
+                              width: 2,
+                            ),
+                          ),
+                          child: CircleAvatar(
+                            radius: 18,
+                            backgroundColor: isDark
                                 ? const Color(0xFF1E293B)
                                 : Colors.white,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.05),
-                                blurRadius: 8,
-                              ),
-                            ],
-                          ),
-                          child: Icon(
-                            isPrivate
-                                ? Icons.visibility_off_outlined
-                                : Icons.visibility_outlined,
-                            color: isDark
-                                ? Colors.white
-                                : const Color(0xFF334155),
-                            size: 22,
+                            backgroundImage: user?.avatarUrl != null
+                                ? NetworkImage(user!.avatarUrl!)
+                                : null,
+                            child: user?.avatarUrl == null
+                                ? Text(
+                                    Helpers.getInitials(user?.name ?? 'G'),
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF6366F1),
+                                    ),
+                                  )
+                                : null,
                           ),
                         ),
                       ),
@@ -151,18 +152,34 @@ class DashboardScreen extends StatelessWidget {
                   // Total Balance Card
                   _BalanceCard(
                     totalBalance: user?.totalBalance ?? 0,
-                    cashBalance: user == null
-                        ? 0.0
-                        : user.wallets
-                              .where((w) => w.type == 'cash')
-                              .fold(0.0, (s, w) => s + w.balance),
-                    bankBalance: user == null
-                        ? 0.0
-                        : user.wallets
-                              .where((w) => w.type == 'bank')
-                              .fold(0.0, (s, w) => s + w.balance),
+                    cashBalance:
+                        (user == null ||
+                            user.wallets.any((w) => w.type == 'cash'))
+                        ? (user?.wallets
+                                  .where((w) => w.type == 'cash')
+                                  .fold<double>(0.0, (s, w) => s + w.balance) ??
+                              0.0)
+                        : null,
+                    bankBalance:
+                        (user == null ||
+                            user.wallets.any((w) => w.type == 'bank'))
+                        ? (user?.wallets
+                                  .where((w) => w.type == 'bank')
+                                  .fold<double>(0.0, (s, w) => s + w.balance) ??
+                              0.0)
+                        : null,
+                    creditBalance:
+                        (user == null ||
+                            user.wallets.any((w) => w.type == 'credit'))
+                        ? (user?.wallets
+                                  .where((w) => w.type == 'credit')
+                                  .fold<double>(0.0, (s, w) => s + w.balance) ??
+                              0.0)
+                        : null,
                     isPrivate: isPrivate,
                     isDark: isDark,
+                    onTogglePrivacy: () =>
+                        provider.isPrivate = !provider.isPrivate,
                   ),
 
                   const SizedBox(height: 16),
@@ -178,6 +195,7 @@ class DashboardScreen extends StatelessWidget {
                           color: const Color(0xFFF43F5E),
                           isPrivate: isPrivate,
                           isDark: isDark,
+                          onTap: () => context.push('/transactions'),
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -189,6 +207,8 @@ class DashboardScreen extends StatelessWidget {
                           color: const Color(0xFFF59E0B),
                           isPrivate: isPrivate,
                           isDark: isDark,
+                          onTap: () =>
+                              context.push('/settlements?tab=payables'),
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -200,18 +220,14 @@ class DashboardScreen extends StatelessWidget {
                           color: const Color(0xFF10B981),
                           isPrivate: isPrivate,
                           isDark: isDark,
+                          onTap: () =>
+                              context.push('/settlements?tab=receivables'),
                         ),
                       ),
                     ],
                   ),
 
                   const SizedBox(height: 24),
-
-                  // Spending Chart
-                  _SpendingChart(
-                    transactions: provider.transactions,
-                    isDark: isDark,
-                  ),
 
                   const SizedBox(height: 24),
 
@@ -240,17 +256,21 @@ class DashboardScreen extends StatelessWidget {
 // --- Balance Card ---
 class _BalanceCard extends StatelessWidget {
   final double totalBalance;
-  final double cashBalance;
-  final double bankBalance;
+  final double? cashBalance;
+  final double? bankBalance;
+  final double? creditBalance;
   final bool isPrivate;
   final bool isDark;
+  final VoidCallback onTogglePrivacy;
 
   const _BalanceCard({
     required this.totalBalance,
-    required this.cashBalance,
-    required this.bankBalance,
+    this.cashBalance,
+    this.bankBalance,
+    this.creditBalance,
     required this.isPrivate,
     required this.isDark,
+    required this.onTogglePrivacy,
   });
 
   @override
@@ -275,113 +295,135 @@ class _BalanceCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Total Balance',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.7),
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            isPrivate ? '₹ ••••••' : Helpers.formatCurrency(totalBalance),
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 28,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.5,
-            ),
-          ),
-          const SizedBox(height: 12),
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Total Balance',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.7),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(12),
+                  const SizedBox(height: 6),
+                  Text(
+                    isPrivate
+                        ? '₹ ••••••'
+                        : Helpers.formatCurrency(totalBalance),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 28,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.5,
+                    ),
                   ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.money_rounded,
-                        color: Colors.white,
-                        size: 16,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Cash',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.7),
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const Spacer(),
-                      Text(
-                        isPrivate
-                            ? '••••'
-                            : Helpers.formatCurrency(cashBalance),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                ],
               ),
-              const SizedBox(width: 8),
-              Expanded(
+              GestureDetector(
+                onTap: onTogglePrivacy,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
+                  padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.white.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
                   ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.account_balance_rounded,
-                        color: Colors.white,
-                        size: 16,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Bank',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.7),
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const Spacer(),
-                      Text(
-                        isPrivate
-                            ? '••••'
-                            : Helpers.formatCurrency(bankBalance),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
+                  child: Icon(
+                    isPrivate
+                        ? Icons.visibility_off_rounded
+                        : Icons.visibility_rounded,
+                    color: Colors.white,
+                    size: 20,
                   ),
                 ),
               ),
             ],
           ),
+          const SizedBox(height: 12),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                if (cashBalance != null) ...[
+                  _buildWalletChip(
+                    'Cash',
+                    cashBalance!,
+                    Icons.money_rounded,
+                    const Color(0xFF10B981),
+                    onTap: () => context.push('/transactions?wallet=Cash'),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                if (bankBalance != null) ...[
+                  _buildWalletChip(
+                    'Bank',
+                    bankBalance!,
+                    Icons.account_balance_rounded,
+                    const Color(0xFF3B82F6),
+                    onTap: () => context.push('/transactions?wallet=Bank'),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                if (creditBalance != null) ...[
+                  _buildWalletChip(
+                    'Credit',
+                    creditBalance!,
+                    Icons.credit_card_rounded,
+                    const Color(0xFF8B5CF6),
+                    onTap: () => context.push('/transactions?wallet=Credit'),
+                  ),
+                ],
+              ],
+            ),
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildWalletChip(
+    String label,
+    double balance,
+    IconData icon,
+    Color color, {
+    VoidCallback? onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: Colors.white, size: 14),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.7),
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              isPrivate ? '••••' : Helpers.formatCurrency(balance),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -395,6 +437,7 @@ class _StatCard extends StatelessWidget {
   final Color color;
   final bool isPrivate;
   final bool isDark;
+  final VoidCallback? onTap;
 
   const _StatCard({
     required this.title,
@@ -403,191 +446,66 @@ class _StatCard extends StatelessWidget {
     required this.color,
     required this.isPrivate,
     required this.isDark,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: (isDark ? const Color(0xFF1E293B) : Colors.white).withValues(
+            alpha: onTap != null ? 1.0 : 0.8,
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 10,
             ),
-            child: Icon(icon, color: color, size: 16),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            title,
-            style: TextStyle(
-              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
+          ],
+          border: onTap != null
+              ? Border.all(color: color.withValues(alpha: 0.1), width: 1)
+              : null,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(icon, color: color, size: 16),
             ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            isPrivate ? '•••' : Helpers.formatCurrency(value),
-            style: TextStyle(
-              color: isDark ? Colors.white : const Color(0xFF0F172A),
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// --- Spending Chart ---
-class _SpendingChart extends StatelessWidget {
-  final List transactions;
-  final bool isDark;
-
-  const _SpendingChart({required this.transactions, required this.isDark});
-
-  @override
-  Widget build(BuildContext context) {
-    // Get last 7 days spending
-    final now = DateTime.now();
-    final spots = <FlSpot>[];
-    for (int i = 6; i >= 0; i--) {
-      final day = now.subtract(Duration(days: i));
-      final dayStr =
-          '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
-      double dayTotal = 0;
-      for (final tx in transactions) {
-        if (tx.date == dayStr && tx.type == 'expense') {
-          dayTotal += tx.amount;
-        }
-      }
-      spots.add(FlSpot((6 - i).toDouble(), dayTotal));
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'This Week',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: isDark ? Colors.white : const Color(0xFF0F172A),
-            ),
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            height: 150,
-            child: LineChart(
-              LineChartData(
-                gridData: const FlGridData(show: false),
-                titlesData: FlTitlesData(
-                  leftTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      getTitlesWidget: (value, meta) {
-                        final labels = [
-                          'Mon',
-                          'Tue',
-                          'Wed',
-                          'Thu',
-                          'Fri',
-                          'Sat',
-                          'Sun',
-                        ];
-                        final day = now.subtract(
-                          Duration(days: 6 - value.toInt()),
-                        );
-                        final idx = day.weekday - 1;
-                        return Padding(
-                          padding: const EdgeInsets.only(top: 8),
-                          child: Text(
-                            labels[idx],
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: isDark
-                                  ? const Color(0xFF64748B)
-                                  : const Color(0xFF94A3B8),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-                borderData: FlBorderData(show: false),
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: spots,
-                    isCurved: true,
-                    color: const Color(0xFF6366F1),
-                    barWidth: 2.5,
-                    dotData: FlDotData(
-                      show: true,
-                      getDotPainter: (spot, percent, bar, index) {
-                        return FlDotCirclePainter(
-                          radius: 3,
-                          color: const Color(0xFF6366F1),
-                          strokeColor: Colors.white,
-                          strokeWidth: 2,
-                        );
-                      },
-                    ),
-                    belowBarData: BarAreaData(
-                      show: true,
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          const Color(0xFF6366F1).withValues(alpha: 0.2),
-                          const Color(0xFF6366F1).withValues(alpha: 0.0),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+            const SizedBox(height: 10),
+            Text(
+              title,
+              style: TextStyle(
+                color: isDark
+                    ? const Color(0xFF94A3B8)
+                    : const Color(0xFF64748B),
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
               ),
             ),
-          ),
-        ],
+            const SizedBox(height: 2),
+            Text(
+              isPrivate ? '•••' : Helpers.formatCurrency(value),
+              style: TextStyle(
+                color: isDark ? Colors.white : const Color(0xFF0F172A),
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -615,23 +533,16 @@ class _QuickActions extends StatelessWidget {
         Row(
           children: [
             _ActionChip(
-              icon: Icons.receipt_long_rounded,
-              label: 'History',
-              onTap: () => context.push('/transactions'),
-              isDark: isDark,
-            ),
-            const SizedBox(width: 10),
-            _ActionChip(
               icon: Icons.handshake_rounded,
-              label: 'Settle',
-              onTap: () => context.go('/social'),
+              label: 'Settlements',
+              onTap: () => context.push('/settlements'),
               isDark: isDark,
             ),
             const SizedBox(width: 10),
             _ActionChip(
-              icon: Icons.qr_code_scanner_rounded,
-              label: 'Scan',
-              onTap: () => context.push('/add-bill?type=expense'),
+              icon: Icons.savings_rounded,
+              label: 'Pools',
+              onTap: () => context.push('/pools'),
               isDark: isDark,
             ),
           ],

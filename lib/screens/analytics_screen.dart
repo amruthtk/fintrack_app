@@ -79,7 +79,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                     'Analytics',
                     style: TextStyle(
                       fontSize: 24,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w900,
+                      fontStyle: FontStyle.italic,
                       color: isDark ? Colors.white : const Color(0xFF0F172A),
                     ),
                   ),

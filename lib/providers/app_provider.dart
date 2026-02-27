@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user.dart';
 import '../models/transaction.dart' as tx;
@@ -24,6 +25,7 @@ class DashboardData {
 
 class AppProvider extends ChangeNotifier {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   // --- UI STATE ---
   bool _loading = true;
@@ -85,16 +87,6 @@ class AppProvider extends ChangeNotifier {
     _darkMode = _prefs?.getBool('fintrack_dark_mode') ?? false;
     _isPrivate = _prefs?.getBool('fintrack_is_private') ?? false;
 
-    // Restore user from local storage
-    final savedUser = _prefs?.getString('fintrack_user');
-    if (savedUser != null) {
-      try {
-        _user = AppUser.fromMap(jsonDecode(savedUser));
-      } catch (_) {
-        _user = null;
-      }
-    }
-
     // Restore guest data
     final guestData = _prefs?.getString('fintrack_guest_data');
     if (guestData != null) {
@@ -106,8 +98,27 @@ class AppProvider extends ChangeNotifier {
       } catch (_) {}
     }
 
-    if (_user != null) {
-      await _loadUserData(_user!.id);
+    // Check if Firebase Auth has a persisted user session
+    final firebaseUser = _auth.currentUser;
+    if (firebaseUser != null) {
+      try {
+        final userDoc = await _db
+            .collection('users')
+            .doc(firebaseUser.uid)
+            .get();
+        if (userDoc.exists) {
+          _user = AppUser.fromFirestore(userDoc);
+          addUserToCache(_user!);
+          await _loadUserData(_user!.id);
+        } else {
+          // No Firestore profile — sign out
+          await _auth.signOut();
+          _user = null;
+        }
+      } catch (e) {
+        debugPrint('Auth restore error: $e');
+        _user = null;
+      }
     } else if (_localTransactions.isNotEmpty) {
       _computeStats(_localTransactions, 'guest');
     }
@@ -124,53 +135,116 @@ class AppProvider extends ChangeNotifier {
     ]);
   }
 
-  // ============ AUTH ============
+  // ============ AUTH (Firebase Authentication) ============
 
+  /// Login: look up email from Firestore by phone, then sign in with Firebase Auth
   Future<AppUser?> loginWithPhone(String phone, String password) async {
+    // Look up user email from Firestore by phone number
     final snap = await _db
         .collection('users')
-        .where('phone', isEqualTo: phone)
+        .where('phone', isEqualTo: phone.trim())
         .get();
     if (snap.docs.isEmpty) return null;
-    final userDoc = snap.docs.first;
-    final data = userDoc.data();
-    if (data['password'] != password) return null;
+
+    final userEmail = snap.docs.first.data()['email'] as String?;
+    if (userEmail == null || userEmail.isEmpty) {
+      throw Exception('No email linked to this account');
+    }
+
+    final userCred = await _auth.signInWithEmailAndPassword(
+      email: userEmail,
+      password: password,
+    );
+    final uid = userCred.user!.uid;
+
+    final userDoc = await _db.collection('users').doc(uid).get();
+    if (!userDoc.exists) return null;
 
     final appUser = AppUser.fromFirestore(userDoc);
     await _setUser(appUser);
     return appUser;
   }
 
+  /// Register with real email
   Future<AppUser> register({
     required String displayName,
     required String phone,
+    required String email,
     required String password,
     String? username,
+    List<Map<String, dynamic>>? initialWallets,
   }) async {
-    final docRef = await _db.collection('users').add({
+    final userCred = await _auth.createUserWithEmailAndPassword(
+      email: email.trim().toLowerCase(),
+      password: password,
+    );
+    final uid = userCred.user!.uid;
+
+    final userData = {
       'displayName': displayName,
+      'name': displayName,
       'phone': phone,
-      'password': password,
+      'email': email.trim().toLowerCase(),
       'username': (username ?? phone).toLowerCase(),
       'isPrivate': false,
-      'wallets': [],
+      'wallets':
+          initialWallets ??
+          [
+            {
+              'id': 'bank',
+              'name': 'Bank Account',
+              'balance': 0,
+              'type': 'bank',
+            },
+            {
+              'id': 'cash',
+              'name': 'Physical Cash',
+              'balance': 0,
+              'type': 'cash',
+            },
+          ],
       'createdAt': DateTime.now().toIso8601String(),
-    });
+    };
+
+    // Use the Auth UID as the Firestore document ID
+    await _db.collection('users').doc(uid).set(userData);
+
+    final walletsList = (userData['wallets'] as List)
+        .map((w) => Wallet.fromMap(w as Map<String, dynamic>))
+        .toList();
+
     final newUser = AppUser(
-      id: docRef.id,
+      id: uid,
       name: displayName,
       phone: phone,
-      password: password,
+      email: email.trim().toLowerCase(),
       username: (username ?? phone).toLowerCase(),
+      wallets: walletsList,
       createdAt: DateTime.now().toIso8601String(),
     );
     await _setUser(newUser);
     return newUser;
   }
 
+  /// Send password reset email by phone number
+  Future<String> sendPasswordReset(String phone) async {
+    final snap = await _db
+        .collection('users')
+        .where('phone', isEqualTo: phone.trim())
+        .get();
+    if (snap.docs.isEmpty) throw Exception('No account with this phone number');
+
+    final userEmail = snap.docs.first.data()['email'] as String?;
+    if (userEmail == null || userEmail.isEmpty) {
+      throw Exception('No email linked to this account');
+    }
+
+    await _auth.sendPasswordResetEmail(email: userEmail);
+    return userEmail;
+  }
+
   Future<void> _setUser(AppUser u) async {
     _user = u;
-    _prefs?.setString('fintrack_user', jsonEncode(u.toMap()));
     addUserToCache(u);
     await _loadUserData(u.id);
     notifyListeners();
@@ -178,6 +252,60 @@ class AppProvider extends ChangeNotifier {
 
   Future<void> logout() async {
     _notifSub?.cancel();
+    await _auth.signOut();
+    _user = null;
+    _transactions = [];
+    _groups = [];
+    _notifications = [];
+    _dashboardData = const DashboardData();
+    _recentActivities = [];
+    _prefs?.remove('fintrack_user');
+    notifyListeners();
+  }
+
+  Future<void> deleteAccount() async {
+    if (_user == null) return;
+    final uid = _user!.id;
+    _notifSub?.cancel();
+
+    try {
+      // 1. Delete Auth account FIRST — frees the email for re-registration
+      await _auth.currentUser?.delete();
+
+      // 2. Delete Firestore profile
+      await _db.collection('users').doc(uid).delete();
+
+      // 3. Delete User's Bills (where they are the creator)
+      final billsSnap = await _db
+          .collection('bills')
+          .where('userId', isEqualTo: uid)
+          .get();
+      for (final doc in billsSnap.docs) {
+        await doc.reference.delete();
+      }
+
+      // 4. Delete Notifications related to the user (sent to them or from them)
+      final notifsToSnap = await _db
+          .collection('notifications')
+          .where('toUserId', isEqualTo: uid)
+          .get();
+      for (final doc in notifsToSnap.docs) {
+        await doc.reference.delete();
+      }
+
+      final notifsFromSnap = await _db
+          .collection('notifications')
+          .where('fromUserId', isEqualTo: uid)
+          .get();
+      for (final doc in notifsFromSnap.docs) {
+        await doc.reference.delete();
+      }
+    } catch (e) {
+      debugPrint('Delete account data cleanup error: $e');
+      // Re-throw to handle "recent login" error in UI
+      rethrow;
+    }
+
     _user = null;
     _transactions = [];
     _groups = [];
@@ -206,7 +334,6 @@ class AppProvider extends ChangeNotifier {
         phone: updates['phone'] as String? ?? old.phone,
         avatarUrl: updates['avatarUrl'] as String? ?? old.avatarUrl,
         avatarColor: updates['avatarColor'] as String? ?? old.avatarColor,
-        password: old.password,
         isPrivate: updates['isPrivate'] as bool? ?? old.isPrivate,
         wallets: old.wallets,
         upiId: updates['upiId'] as String? ?? old.upiId,
@@ -221,29 +348,32 @@ class AppProvider extends ChangeNotifier {
         avatarUrl: updates['avatarUrl'] as String? ?? _user!.avatarUrl,
         upiId: updates['upiId'] as String? ?? _user!.upiId,
       );
-      _prefs?.setString('fintrack_user', jsonEncode(_user!.toMap()));
     }
     notifyListeners();
   }
 
-  Future<void> fetchUsersByIds(List<String> ids) async {
-    if (ids.isEmpty) return;
+  Future<List<AppUser>> fetchUsersByIds(List<String> ids) async {
+    if (ids.isEmpty) return [];
+
     final uncached = ids
         .where((id) => !_usersCache.any((u) => u.id == id))
         .toList();
-    if (uncached.isEmpty) return;
 
-    // Firestore 'in' limit = 30
-    for (var i = 0; i < uncached.length; i += 30) {
-      final chunk = uncached.skip(i).take(30).toList();
-      final snap = await _db
-          .collection('users')
-          .where(FieldPath.documentId, whereIn: chunk)
-          .get();
-      for (final doc in snap.docs) {
-        addUserToCache(AppUser.fromFirestore(doc));
+    if (uncached.isNotEmpty) {
+      // Firestore 'in' limit = 30
+      for (var i = 0; i < uncached.length; i += 30) {
+        final chunk = uncached.skip(i).take(30).toList();
+        final snap = await _db
+            .collection('users')
+            .where(FieldPath.documentId, whereIn: chunk)
+            .get();
+        for (final doc in snap.docs) {
+          addUserToCache(AppUser.fromFirestore(doc));
+        }
       }
     }
+
+    return ids.map((id) => getCachedUser(id)).whereType<AppUser>().toList();
   }
 
   AppUser? getCachedUser(String id) {
@@ -430,7 +560,7 @@ class AppProvider extends ChangeNotifier {
 
     final docRef = await _db.collection('bills').add(billData);
 
-    // Auto-update wallet balance
+    // Auto-update wallet balance (with insufficient funds check)
     if ((data['type'] == 'expense' || data['type'] == 'income') &&
         data['wallet'] != null &&
         data['isAdjustment'] != true) {
@@ -439,6 +569,11 @@ class AppProvider extends ChangeNotifier {
           .firstOrNull;
       if (targetWallet != null) {
         final amount = (data['amount'] as num).toDouble();
+        if (data['type'] == 'expense' && targetWallet.balance < amount) {
+          throw Exception(
+            'Insufficient balance in your ${targetWallet.name}. Please reconcile or top-up.',
+          );
+        }
         final newBalance = data['type'] == 'expense'
             ? targetWallet.balance - amount
             : targetWallet.balance + amount;
@@ -446,7 +581,7 @@ class AppProvider extends ChangeNotifier {
       }
     }
 
-    // Handle split wallet deduction
+    // Handle split wallet deduction (with insufficient funds check)
     if (data['type'] == 'split' &&
         data['wallet'] != null &&
         data['payerId'] == _user!.id) {
@@ -455,6 +590,11 @@ class AppProvider extends ChangeNotifier {
           .firstOrNull;
       if (targetWallet != null) {
         final amount = (data['amount'] as num).toDouble();
+        if (targetWallet.balance < amount) {
+          throw Exception(
+            'Insufficient balance in your ${targetWallet.name} for this split. Please reconcile or top-up.',
+          );
+        }
         final newBalance = targetWallet.balance - amount;
         await _updateWalletInFirestore(targetWallet.id, newBalance);
       }
@@ -575,8 +715,9 @@ class AppProvider extends ChangeNotifier {
     if (_user == null) return;
     await _db.collection('users').doc(_user!.id).update({
       'wallets': wallets.map((w) => w.toMap()).toList(),
+      'wealthCalibrationComplete': true,
     });
-    _user = _user!.copyWith(wallets: wallets);
+    _user = _user!.copyWith(wallets: wallets, wealthCalibrationComplete: true);
     _prefs?.setString('fintrack_user', jsonEncode(_user!.toMap()));
     notifyListeners();
   }
@@ -905,15 +1046,20 @@ class AppProvider extends ChangeNotifier {
   }
 
   Future<void> updatePassword(String current, String newPassword) async {
-    if (_user == null) return;
-    if (_user!.password != current) {
-      throw Exception('Current password is incorrect');
+    final firebaseUser = _auth.currentUser;
+    if (firebaseUser == null || _user == null) {
+      throw Exception('Not logged in');
     }
-    await _db.collection('users').doc(_user!.id).update({
-      'password': newPassword,
-    });
-    _user = _user!.copyWith(password: newPassword);
-    _prefs?.setString('fintrack_user', jsonEncode(_user!.toMap()));
+
+    // Re-authenticate with current credentials
+    final credential = EmailAuthProvider.credential(
+      email: firebaseUser.email!,
+      password: current,
+    );
+    await firebaseUser.reauthenticateWithCredential(credential);
+
+    // Update password in Firebase Auth
+    await firebaseUser.updatePassword(newPassword);
     notifyListeners();
   }
 

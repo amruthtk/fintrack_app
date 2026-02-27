@@ -127,7 +127,8 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
           'Create Group',
           style: TextStyle(
             color: isDark ? Colors.white : const Color(0xFF0F172A),
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w900,
+            fontStyle: FontStyle.italic,
           ),
         ),
       ),

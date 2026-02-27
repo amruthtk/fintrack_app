@@ -1,0 +1,346 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/app_provider.dart';
+import '../widgets/social_components.dart';
+import '../services/upi_service.dart';
+import '../utils/helpers.dart';
+
+class SettlementsScreen extends StatefulWidget {
+  final String? initialTab;
+  const SettlementsScreen({super.key, this.initialTab});
+
+  @override
+  State<SettlementsScreen> createState() => _SettlementsScreenState();
+}
+
+class _SettlementsScreenState extends State<SettlementsScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  final Set<String> _expandedPersons = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(
+      length: 2,
+      vsync: this,
+      initialIndex: widget.initialTab == 'payables' ? 1 : 0,
+    );
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Consumer<AppProvider>(
+      builder: (context, provider, _) {
+        final userId = provider.user?.id ?? '';
+        final splits = provider.transactions
+            .where((t) => t.type == 'split' && t.splitType != 'pool')
+            .toList();
+
+        final rawPayables = <SettlementItem>[];
+        for (final s in splits) {
+          if (s.payerId != userId) {
+            final myEntry = s.members.where((m) => m.id == userId).firstOrNull;
+            if (myEntry != null && myEntry.status != 'paid') {
+              final payer = provider.getCachedUser(s.payerId ?? '');
+              rawPayables.add(
+                SettlementItem(
+                  bill: s,
+                  personName: payer?.name ?? 'Unknown',
+                  personId: s.payerId ?? '',
+                  amount: myEntry.amount,
+                  type: 'pay',
+                ),
+              );
+            }
+          }
+        }
+
+        final rawReceivables = <SettlementItem>[];
+        for (final s in splits) {
+          if (s.payerId == userId) {
+            for (final m in s.members) {
+              if (m.id != userId && m.status != 'paid') {
+                final debtor = provider.getCachedUser(m.id);
+                rawReceivables.add(
+                  SettlementItem(
+                    bill: s,
+                    personName: debtor?.name ?? 'Unknown',
+                    personId: m.id,
+                    amount: m.amount,
+                    type: 'receive',
+                  ),
+                );
+              }
+            }
+          }
+        }
+
+        // Grouping logic
+        Map<String, List<SettlementItem>> groupItems(
+          List<SettlementItem> items,
+        ) {
+          final groups = <String, List<SettlementItem>>{};
+          for (final item in items) {
+            groups.putIfAbsent(item.personId, () => []).add(item);
+          }
+          return groups;
+        }
+
+        final groupedPayables = groupItems(rawPayables);
+        final groupedReceivables = groupItems(rawReceivables);
+
+        return Scaffold(
+          backgroundColor: Colors.transparent,
+          appBar: AppBar(
+            title: const Text(
+              'Settlements',
+              style: TextStyle(
+                fontWeight: FontWeight.w900,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+            backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
+            elevation: 0,
+            foregroundColor: isDark ? Colors.white : const Color(0xFF0F172A),
+            bottom: TabBar(
+              controller: _tabController,
+              indicatorColor: const Color(0xFF6366F1),
+              indicatorWeight: 3,
+              labelColor: isDark ? Colors.white : const Color(0xFF0F172A),
+              unselectedLabelColor: Colors.grey,
+              labelStyle: const TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 13,
+              ),
+              tabs: const [
+                Tab(text: 'To Receive'),
+                Tab(text: 'To Pay'),
+              ],
+            ),
+          ),
+          body: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: isDark
+                    ? [const Color(0xFF0F172A), const Color(0xFF0F172A)]
+                    : [const Color(0xFFF8FAFC), const Color(0xFFEEF2FF)],
+              ),
+            ),
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildSettlementList(
+                  context,
+                  provider,
+                  groupedReceivables,
+                  isDark,
+                  'receive',
+                ),
+                _buildSettlementList(
+                  context,
+                  provider,
+                  groupedPayables,
+                  isDark,
+                  'pay',
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSettlementList(
+    BuildContext context,
+    AppProvider provider,
+    Map<String, List<SettlementItem>> groupedItems,
+    bool isDark,
+    String type,
+  ) {
+    if (groupedItems.isEmpty) {
+      return EmptyState(
+        icon: Icons.handshake_rounded,
+        message: 'All settled up! 🎉',
+        isDark: isDark,
+      );
+    }
+
+    final sortedIds = groupedItems.keys.toList();
+
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+      itemCount: sortedIds.length,
+      itemBuilder: (context, index) {
+        final personId = sortedIds[index];
+        final items = groupedItems[personId]!;
+        final total = items.fold(0.0, (sum, item) => sum + item.amount);
+        final personName = items.first.personName;
+        final isExpanded = _expandedPersons.contains(personId);
+        final user = provider.getCachedUser(personId);
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E293B) : Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 10,
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                leading: CircleAvatar(
+                  backgroundColor: const Color(
+                    0xFF6366F1,
+                  ).withValues(alpha: 0.1),
+                  backgroundImage: user?.avatarUrl != null
+                      ? NetworkImage(user!.avatarUrl!)
+                      : null,
+                  child: user?.avatarUrl == null
+                      ? Text(
+                          Helpers.getInitials(personName),
+                          style: const TextStyle(
+                            color: Color(0xFF6366F1),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        )
+                      : null,
+                ),
+                title: Text(
+                  personName,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                  ),
+                ),
+                subtitle: Text(
+                  '${items.length} pending bills',
+                  style: const TextStyle(
+                    color: Color(0xFF94A3B8),
+                    fontSize: 12,
+                  ),
+                ),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      Helpers.formatCurrency(total),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 16,
+                        color: type == 'pay'
+                            ? const Color(0xFFF59E0B)
+                            : const Color(0xFF10B981),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(
+                      isExpanded ? Icons.expand_less : Icons.expand_more,
+                      color: const Color(0xFF94A3B8),
+                    ),
+                  ],
+                ),
+                onTap: () {
+                  setState(() {
+                    if (isExpanded) {
+                      _expandedPersons.remove(personId);
+                    } else {
+                      _expandedPersons.add(personId);
+                    }
+                  });
+                },
+              ),
+              if (isExpanded) ...[
+                const Divider(height: 1),
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    children: items.map((item) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: SettlementCard(
+                          item: item,
+                          isDark: isDark,
+                          onPay: type == 'pay'
+                              ? () => _handlePay(context, provider, item)
+                              : null,
+                          onSettle: () {
+                            if (type == 'pay') {
+                              provider.requestSettlement(
+                                item.bill.id,
+                                provider.user?.id ?? '',
+                              );
+                            } else {
+                              provider.settleSplit(item.bill.id, item.personId);
+                            }
+                          },
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _handlePay(
+    BuildContext context,
+    AppProvider provider,
+    SettlementItem item,
+  ) async {
+    final payer = provider.getCachedUser(item.personId);
+    final upiId = payer?.upiId;
+    if (upiId == null || upiId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            "${payer?.name ?? 'This user'} hasn't set up their UPI ID yet",
+          ),
+          backgroundColor: const Color(0xFFF59E0B),
+        ),
+      );
+      return;
+    }
+
+    final upiUrl = UpiService.buildUpiUrl(
+      upiId: upiId,
+      payeeName: payer?.name ?? 'Friend',
+      amount: item.amount,
+      note: item.bill.title,
+    );
+
+    final launched = await UpiService.launchUpiApp(upiUrl);
+    if (!launched && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No UPI app found on this device'),
+          backgroundColor: Color(0xFFF43F5E),
+        ),
+      );
+    }
+  }
+}

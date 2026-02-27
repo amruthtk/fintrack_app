@@ -1,42 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'dashboard_screen.dart';
-import 'analytics_screen.dart';
-import 'social_screen.dart';
-import 'profile_screen.dart';
 
-class ShellScreen extends StatefulWidget {
+class ShellScreen extends StatelessWidget {
   final Widget child;
   const ShellScreen({super.key, required this.child});
 
-  @override
-  State<ShellScreen> createState() => _ShellScreenState();
-}
-
-class _ShellScreenState extends State<ShellScreen> {
-  int _currentIndex = 0;
-
-  final _screens = const [
-    DashboardScreen(),
-    AnalyticsScreen(),
-    SizedBox(), // Placeholder for FAB
-    SocialScreen(),
-    ProfileScreen(),
-  ];
-
-  static const _paths = ['/', '/analytics', '', '/social', '/profile'];
-
-  void _onTabTap(int index) {
-    if (index == 2) {
-      // Center FAB — show add options
-      _showAddOptions();
-      return;
-    }
-    setState(() => _currentIndex = index);
-    context.go(_paths[index]);
+  int _getCurrentIndex(BuildContext context) {
+    final location = GoRouterState.of(context).matchedLocation;
+    if (location.startsWith('/scan')) return 0;
+    if (location.startsWith('/groups')) return 1;
+    return -1; // Dashboard
   }
 
-  void _showAddOptions() {
+  void _onTabTap(BuildContext context, int index) {
+    final paths = ['/scan', '/groups'];
+    if (_getCurrentIndex(context) == index) return;
+    context.go(paths[index]);
+  }
+
+  void _showAddOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -60,12 +42,11 @@ class _ShellScreenState extends State<ShellScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final currentIndex = _getCurrentIndex(context);
 
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex >= 2 ? _currentIndex - 1 : _currentIndex,
-        children: [_screens[0], _screens[1], _screens[3], _screens[4]],
-      ),
+      backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
+      body: child,
       extendBody: true,
       floatingActionButton: Container(
         height: 56,
@@ -84,7 +65,7 @@ class _ShellScreenState extends State<ShellScreen> {
           ],
         ),
         child: FloatingActionButton(
-          onPressed: _showAddOptions,
+          onPressed: () => _showAddOptions(context),
           backgroundColor: Colors.transparent,
           elevation: 0,
           child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
@@ -102,29 +83,17 @@ class _ShellScreenState extends State<ShellScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _NavItem(
-                icon: Icons.home_rounded,
-                label: 'Home',
-                active: _currentIndex == 0,
-                onTap: () => _onTabTap(0),
-              ),
-              _NavItem(
-                icon: Icons.bar_chart_rounded,
-                label: 'Analytics',
-                active: _currentIndex == 1,
-                onTap: () => _onTabTap(1),
+                icon: Icons.qr_code_scanner_rounded,
+                label: 'Scan',
+                active: currentIndex == 0,
+                onTap: () => _onTabTap(context, 0),
               ),
               const SizedBox(width: 48), // Space for FAB
               _NavItem(
-                icon: Icons.people_rounded,
-                label: 'Social',
-                active: _currentIndex == 3,
-                onTap: () => _onTabTap(3),
-              ),
-              _NavItem(
-                icon: Icons.person_rounded,
-                label: 'Profile',
-                active: _currentIndex == 4,
-                onTap: () => _onTabTap(4),
+                icon: Icons.groups_rounded,
+                label: 'Groups',
+                active: currentIndex == 1,
+                onTap: () => _onTabTap(context, 1),
               ),
             ],
           ),
@@ -212,7 +181,8 @@ class _AddOptionsSheet extends StatelessWidget {
             'Quick Add',
             style: TextStyle(
               fontSize: 18,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w900,
+              fontStyle: FontStyle.italic,
               color: isDark ? Colors.white : const Color(0xFF0F172A),
             ),
           ),
