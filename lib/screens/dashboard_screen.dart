@@ -195,7 +195,7 @@ class DashboardScreen extends StatelessWidget {
                           color: const Color(0xFFF43F5E),
                           isPrivate: isPrivate,
                           isDark: isDark,
-                          onTap: () => context.push('/transactions'),
+                          onTap: () => context.push('/today-spent'),
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -208,7 +208,7 @@ class DashboardScreen extends StatelessWidget {
                           isPrivate: isPrivate,
                           isDark: isDark,
                           onTap: () =>
-                              context.push('/settlements?tab=payables'),
+                              context.push('/to-pay'),
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -221,7 +221,7 @@ class DashboardScreen extends StatelessWidget {
                           isPrivate: isPrivate,
                           isDark: isDark,
                           onTap: () =>
-                              context.push('/settlements?tab=receivables'),
+                              context.push('/to-receive'),
                         ),
                       ),
                     ],

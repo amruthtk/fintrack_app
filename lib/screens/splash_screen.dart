@@ -65,8 +65,20 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
-      body: Center(
+      backgroundColor: const Color(0xFF0F172A),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF0F172A),
+              Color(0xFF1E1B4B),
+              Color(0xFF0F172A),
+            ],
+          ),
+        ),
+        child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -83,7 +95,7 @@ class _SplashScreenState extends State<SplashScreen>
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.blue.withValues(alpha: 0.4),
+                        color: const Color(0xFF6366F1).withValues(alpha: 0.4),
                         blurRadius: 40,
                         offset: const Offset(0, 12),
                       ),
@@ -91,7 +103,7 @@ class _SplashScreenState extends State<SplashScreen>
                   ),
                   child: const Icon(
                     Icons.bolt_rounded,
-                    color: Color(0xFF2563EB),
+                    color: Color(0xFF6366F1),
                     size: 44,
                   ),
                 ),
@@ -138,13 +150,13 @@ class _SplashScreenState extends State<SplashScreen>
                                 child: Container(
                                   width: 12,
                                   height: 12,
-                                  decoration: const BoxDecoration(
+                                  decoration: BoxDecoration(
                                     color: Colors.white,
                                     shape: BoxShape.circle,
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.white24,
-                                        blurRadius: 4,
+                                        color: const Color(0xFF6366F1).withValues(alpha: 0.5),
+                                        blurRadius: 6,
                                       ),
                                     ],
                                   ),
@@ -170,6 +182,7 @@ class _SplashScreenState extends State<SplashScreen>
               ],
             ),
           ],
+        ),
         ),
       ),
     );
