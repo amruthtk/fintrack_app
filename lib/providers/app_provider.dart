@@ -319,8 +319,12 @@ class AppProvider extends ChangeNotifier {
   // ============ USER CACHE ============
 
   void addUserToCache(AppUser user) {
-    if (_usersCache.any((u) => u.id == user.id)) return;
-    _usersCache.add(user);
+    final idx = _usersCache.indexWhere((u) => u.id == user.id);
+    if (idx != -1) {
+      _usersCache[idx] = user;
+    } else {
+      _usersCache.add(user);
+    }
   }
 
   void updateUserInCache(String userId, Map<String, dynamic> updates) {
@@ -352,12 +356,15 @@ class AppProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<List<AppUser>> fetchUsersByIds(List<String> ids) async {
+  Future<List<AppUser>> fetchUsersByIds(
+    List<String> ids, {
+    bool force = false,
+  }) async {
     if (ids.isEmpty) return [];
 
-    final uncached = ids
-        .where((id) => !_usersCache.any((u) => u.id == id))
-        .toList();
+    final uncached = force
+        ? ids
+        : ids.where((id) => !_usersCache.any((u) => u.id == id)).toList();
 
     if (uncached.isNotEmpty) {
       // Firestore 'in' limit = 30
@@ -476,13 +483,20 @@ class AppProvider extends ChangeNotifier {
               return '${b.date}T${b.time}'.compareTo('${a.date}T${a.time}');
             });
 
-      _computeStats(allTx, userId);
-
-      // Cache encountered users
-      final allMemberIds = allTx.expand((t) => t.memberIds).toSet().toList();
-      if (allMemberIds.isNotEmpty) {
-        await fetchUsersByIds(allMemberIds);
+      // Cache encountered users FIRST (include payerIds too, they may not be in memberIds)
+      final allMemberIds = allTx.expand((t) => t.memberIds).toSet();
+      for (final t in allTx) {
+        if (t.payerId != null && t.payerId!.isNotEmpty) {
+          allMemberIds.add(t.payerId!);
+        }
       }
+      final allIdsToFetch = allMemberIds.toList();
+      if (allIdsToFetch.isNotEmpty) {
+        await fetchUsersByIds(allIdsToFetch);
+      }
+
+      // Now compute stats & notify listeners — users are already cached
+      _computeStats(allTx, userId);
     } catch (e) {
       debugPrint('fetchTransactions failed: $e');
     }
@@ -724,7 +738,12 @@ class AppProvider extends ChangeNotifier {
 
   // ============ SETTLEMENTS ============
 
-  Future<void> requestSettlement(String billId, String memberId) async {
+  Future<void> requestSettlement(
+    String billId,
+    String memberId, {
+    String paymentMethod = 'other',
+    String? walletId,
+  }) async {
     if (_user == null) return;
     final billSnap = await _db.collection('bills').doc(billId).get();
     if (!billSnap.exists) return;
@@ -734,6 +753,24 @@ class AppProvider extends ChangeNotifier {
       orElse: () => null,
     );
     final amount = (memberEntry?['amount'] ?? 0).toDouble();
+
+    // Deduct from debtor's wallet if a wallet was selected
+    if (walletId != null && amount > 0) {
+      final targetWallet = _user!.wallets
+          .where((w) => w.id == walletId)
+          .firstOrNull;
+      if (targetWallet != null) {
+        if (targetWallet.balance < amount) {
+          throw Exception(
+            'Insufficient balance in ${targetWallet.name}. Current: ₹${targetWallet.balance.toStringAsFixed(0)}',
+          );
+        }
+        await _updateWalletInFirestore(
+          targetWallet.id,
+          targetWallet.balance - amount,
+        );
+      }
+    }
 
     await _db.collection('notifications').add({
       'type': 'settlement_request',
@@ -745,6 +782,7 @@ class AppProvider extends ChangeNotifier {
       'amount': amount,
       'title': data['title'] ?? 'Split Bill',
       'wallet': data['wallet'],
+      'paymentMethod': paymentMethod,
       'read': false,
       'status': 'pending',
       'createdAt': DateTime.now().toIso8601String(),
@@ -757,8 +795,9 @@ class AppProvider extends ChangeNotifier {
     String memberId,
     double amount,
     String fromUserId,
-    String? wallet,
-  ) async {
+    String? wallet, {
+    String? receivedWalletId,
+  }) async {
     if (_user == null) return;
 
     // Update member status to paid
@@ -773,16 +812,30 @@ class AppProvider extends ChangeNotifier {
       await billRef.update({'members': updatedMembers});
     }
 
-    // Add to payer's wallet
-    if (wallet != null && amount > 0) {
-      final targetWallet = _user!.wallets
-          .where((w) => w.name == wallet)
-          .firstOrNull;
-      if (targetWallet != null) {
-        await _updateWalletInFirestore(
-          targetWallet.id,
-          targetWallet.balance + amount,
-        );
+    // Add to payer's chosen wallet (or fallback to bill wallet)
+    if (amount > 0) {
+      if (receivedWalletId != null) {
+        // Payer chose a specific wallet to receive into
+        final targetWallet = _user!.wallets
+            .where((w) => w.id == receivedWalletId)
+            .firstOrNull;
+        if (targetWallet != null) {
+          await _updateWalletInFirestore(
+            targetWallet.id,
+            targetWallet.balance + amount,
+          );
+        }
+      } else if (wallet != null) {
+        // Fallback: use the original bill's wallet name
+        final targetWallet = _user!.wallets
+            .where((w) => w.name == wallet)
+            .firstOrNull;
+        if (targetWallet != null) {
+          await _updateWalletInFirestore(
+            targetWallet.id,
+            targetWallet.balance + amount,
+          );
+        }
       }
     }
 

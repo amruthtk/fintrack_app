@@ -26,6 +26,14 @@ class _SettlementsScreenState extends State<SettlementsScreen>
       vsync: this,
       initialIndex: widget.initialTab == 'payables' ? 1 : 0,
     );
+    // Refresh transactions so newly created splits from other users are visible
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = context.read<AppProvider>();
+      final userId = provider.user?.id;
+      if (userId != null) {
+        provider.fetchTransactions(userId);
+      }
+    });
   }
 
   @override
@@ -286,10 +294,7 @@ class _SettlementsScreenState extends State<SettlementsScreen>
                               : null,
                           onSettle: () {
                             if (type == 'pay') {
-                              provider.requestSettlement(
-                                item.bill.id,
-                                provider.user?.id ?? '',
-                              );
+                              _showPaymentMethodPicker(context, provider, item);
                             } else {
                               provider.settleSplit(item.bill.id, item.personId);
                             }
@@ -307,14 +312,252 @@ class _SettlementsScreenState extends State<SettlementsScreen>
     );
   }
 
+  void _showPaymentMethodPicker(
+    BuildContext context,
+    AppProvider provider,
+    SettlementItem item,
+  ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final wallets = provider.user?.wallets ?? [];
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Container(
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E293B) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Handle bar
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? const Color(0xFF334155)
+                        : const Color(0xFFCBD5E1),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'How did you pay?',
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 18,
+                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Select payment method for ₹${item.amount.toStringAsFixed(0)}',
+                style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+              ),
+              const SizedBox(height: 16),
+              // Wallet options
+              ...wallets.map((w) {
+                final icon = w.type == 'cash'
+                    ? Icons.account_balance_wallet_rounded
+                    : w.type == 'credit'
+                    ? Icons.credit_card_rounded
+                    : Icons.account_balance_rounded;
+                final color = w.type == 'cash'
+                    ? const Color(0xFF10B981)
+                    : w.type == 'credit'
+                    ? const Color(0xFFF59E0B)
+                    : const Color(0xFF6366F1);
+                return _paymentOption(
+                  context: ctx,
+                  icon: icon,
+                  color: color,
+                  title: w.name,
+                  subtitle: '₹${w.balance.toStringAsFixed(0)} available',
+                  isDark: isDark,
+                  onTap: () async {
+                    Navigator.pop(ctx);
+                    try {
+                      await provider.requestSettlement(
+                        item.bill.id,
+                        provider.user?.id ?? '',
+                        paymentMethod: w.type,
+                        walletId: w.id,
+                      );
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Payment marked via ${w.name}'),
+                            backgroundColor: const Color(0xFF10B981),
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              e.toString().replaceAll('Exception: ', ''),
+                            ),
+                            backgroundColor: const Color(0xFFF43F5E),
+                          ),
+                        );
+                      }
+                    }
+                  },
+                );
+              }),
+              // UPI (already paid externally)
+              _paymentOption(
+                context: ctx,
+                icon: Icons.phone_android_rounded,
+                color: const Color(0xFF3B82F6),
+                title: 'UPI (Already Paid)',
+                subtitle: 'Paid via external UPI app',
+                isDark: isDark,
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  await provider.requestSettlement(
+                    item.bill.id,
+                    provider.user?.id ?? '',
+                    paymentMethod: 'upi',
+                  );
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Payment marked via UPI'),
+                        backgroundColor: Color(0xFF10B981),
+                      ),
+                    );
+                  }
+                },
+              ),
+              // Compensated (bought something)
+              _paymentOption(
+                context: ctx,
+                icon: Icons.shopping_bag_rounded,
+                color: const Color(0xFFEC4899),
+                title: 'Compensated',
+                subtitle: 'Bought something for them instead',
+                isDark: isDark,
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  await provider.requestSettlement(
+                    item.bill.id,
+                    provider.user?.id ?? '',
+                    paymentMethod: 'compensated',
+                  );
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Marked as compensated'),
+                        backgroundColor: Color(0xFF10B981),
+                      ),
+                    );
+                  }
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _paymentOption({
+    required BuildContext context,
+    required IconData icon,
+    required Color color,
+    required String title,
+    required String subtitle,
+    required bool isDark,
+    required VoidCallback onTap,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: color, size: 20),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                        color: isDark ? Colors.white : const Color(0xFF0F172A),
+                      ),
+                    ),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF94A3B8),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: isDark
+                    ? const Color(0xFF475569)
+                    : const Color(0xFFCBD5E1),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   void _handlePay(
     BuildContext context,
     AppProvider provider,
     SettlementItem item,
   ) async {
-    final payer = provider.getCachedUser(item.personId);
+    // Try cache first, then fetch fresh from Firestore if needed
+    var payer = provider.getCachedUser(item.personId);
+    if (payer == null || (payer.upiId == null || payer.upiId!.isEmpty)) {
+      // Fetch fresh user data from Firestore
+      final fetched = await provider.fetchUsersByIds([
+        item.personId,
+      ], force: true);
+      if (fetched.isNotEmpty) {
+        payer = fetched.first;
+      }
+    }
     final upiId = payer?.upiId;
     if (upiId == null || upiId.isEmpty) {
+      if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(

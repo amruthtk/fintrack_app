@@ -14,6 +14,7 @@ class AppNotification {
   final String title;
   final String? status; // 'pending', 'approved', 'rejected'
   final String? wallet;
+  final String? paymentMethod;
   final bool read;
   final String? createdAt;
 
@@ -30,6 +31,7 @@ class AppNotification {
     this.title = '',
     this.status,
     this.wallet,
+    this.paymentMethod,
     this.read = false,
     this.createdAt,
   });
@@ -51,6 +53,7 @@ class AppNotification {
       title: data['title'] ?? '',
       status: data['status'],
       wallet: data['wallet'],
+      paymentMethod: data['paymentMethod'],
       read: data['read'] ?? false,
       createdAt: data['createdAt']?.toString(),
     );
