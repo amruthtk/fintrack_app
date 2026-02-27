@@ -77,9 +77,9 @@ class AppProvider extends ChangeNotifier {
   bool _isSyncing = false;
   bool get isSyncing => _isSyncing;
 
-  SharedPreferences? _prefs;
-  StreamSubscription? _notifSub;
   StreamSubscription? _billsSub;
+  Map<String, dynamic>? _pendingPayment;
+  Map<String, dynamic>? get pendingPayment => _pendingPayment;
 
   // ============ INITIALIZATION ============
 
@@ -96,6 +96,14 @@ class AppProvider extends ChangeNotifier {
         _localTransactions = list
             .map((m) => tx.Transaction.fromMap(m))
             .toList();
+      } catch (_) {}
+    }
+
+    // Restore pending payment data
+    final pendingData = _prefs?.getString('fintrack_pending_payment');
+    if (pendingData != null) {
+      try {
+        _pendingPayment = jsonDecode(pendingData);
       } catch (_) {}
     }
 
@@ -262,6 +270,18 @@ class AppProvider extends ChangeNotifier {
     _dashboardData = const DashboardData();
     _recentActivities = [];
     _prefs?.remove('fintrack_user');
+    _pendingPayment = null;
+    _prefs?.remove('fintrack_pending_payment');
+    notifyListeners();
+  }
+
+  void setPendingPayment(Map<String, dynamic>? data) {
+    _pendingPayment = data;
+    if (data == null) {
+      _prefs?.remove('fintrack_pending_payment');
+    } else {
+      _prefs?.setString('fintrack_pending_payment', jsonEncode(data));
+    }
     notifyListeners();
   }
 
@@ -509,7 +529,13 @@ class AppProvider extends ChangeNotifier {
         .where('memberIds', arrayContains: userId)
         .get();
     
-    final allTx = snap.docs.map((d) => tx.Transaction.fromFirestore(d)).toList();
+    final allTx = snap.docs.map((d) => tx.Transaction.fromFirestore(d)).toList()
+      ..sort((a, b) {
+        if (a.createdAt != null && b.createdAt != null) {
+          return b.createdAt!.compareTo(a.createdAt!);
+        }
+        return '${b.date}T${b.time}'.compareTo('${a.date}T${a.time}');
+      });
     _computeStats(allTx, userId);
   }
 

@@ -1,9 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../widgets/persistent_payment_dialog.dart';
+import '../providers/app_provider.dart';
+import 'package:provider/provider.dart';
 
-class ShellScreen extends StatelessWidget {
+class ShellScreen extends StatefulWidget {
   final Widget child;
   const ShellScreen({super.key, required this.child});
+
+  @override
+  State<ShellScreen> createState() => _ShellScreenState();
+}
+
+class _ShellScreenState extends State<ShellScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkPendingPayment();
+    });
+  }
+
+  void _checkPendingPayment() {
+    final provider = context.read<AppProvider>();
+    if (provider.pendingPayment != null) {
+      PersistentPaymentDialog.show(context, provider.pendingPayment!);
+    }
+  }
 
   int _getCurrentIndex(BuildContext context) {
     final location = GoRouterState.of(context).matchedLocation;
@@ -46,7 +69,7 @@ class ShellScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
-      body: child,
+      body: widget.child,
       extendBody: true,
       floatingActionButton: Container(
         height: 56,

@@ -202,6 +202,8 @@ class _ScanScreenState extends State<ScanScreen> {
         'time': Helpers.currentTime(),
       });
 
+      provider.setPendingPayment(null);
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -421,6 +423,16 @@ class _UpiPaymentSheetState extends State<_UpiPaymentSheet> {
         (w) => w.id == _selectedWalletId,
       );
 
+      final pendingData = {
+        'amount': amount,
+        'appName': app.name,
+        'walletId': _selectedWalletId,
+        'walletType': wallet?.type,
+        'merchantName': widget.merchantName,
+        'category': 'Shopping', // Default from ScanScreen
+      };
+      provider.setPendingPayment(pendingData);
+
       _showPaymentConfirmation(
         amount: amount,
         appName: app.name,
@@ -556,6 +568,7 @@ class _UpiPaymentSheetState extends State<_UpiPaymentSheet> {
                       child: OutlinedButton(
                         onPressed: () {
                           Navigator.pop(ctx);
+                          context.read<AppProvider>().setPendingPayment(null);
                           if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
@@ -1088,6 +1101,11 @@ class _UpiPaymentSheetState extends State<_UpiPaymentSheet> {
             )
             .toList() ??
         [];
+    
+    if (_selectedWalletId == null && wallets.isNotEmpty) {
+      final bank = wallets.where((w) => w.type == 'bank').firstOrNull;
+      _selectedWalletId = bank?.id ?? wallets.first.id;
+    }
 
     return Container(
       padding: EdgeInsets.fromLTRB(
@@ -1204,7 +1222,7 @@ class _UpiPaymentSheetState extends State<_UpiPaymentSheet> {
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: wallets.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                separatorBuilder: (ctx, index) => const SizedBox(width: 12),
                 itemBuilder: (ctx, i) {
                   final w = wallets[i];
                   final active = _selectedWalletId == w.id;
