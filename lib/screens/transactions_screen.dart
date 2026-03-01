@@ -113,7 +113,14 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
           if (_sortBy == 'amount') {
             cmp = a.amount.compareTo(b.amount);
           } else {
+            // Sort by date, then time, then createdAt
             cmp = a.date.compareTo(b.date);
+            if (cmp == 0) {
+              cmp = a.time.compareTo(b.time);
+            }
+            if (cmp == 0 && a.createdAt != null && b.createdAt != null) {
+              cmp = a.createdAt!.compareTo(b.createdAt!);
+            }
           }
           return _sortAsc ? cmp : -cmp;
         });

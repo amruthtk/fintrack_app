@@ -79,6 +79,9 @@ class AppProvider extends ChangeNotifier {
 
   SharedPreferences? _prefs;
   StreamSubscription? _notifSub;
+  StreamSubscription? _billsSub;
+  Map<String, dynamic>? _pendingPayment;
+  Map<String, dynamic>? get pendingPayment => _pendingPayment;
 
   // ============ INITIALIZATION ============
 
@@ -95,6 +98,14 @@ class AppProvider extends ChangeNotifier {
         _localTransactions = list
             .map((m) => tx.Transaction.fromMap(m))
             .toList();
+      } catch (_) {}
+    }
+
+    // Restore pending payment data
+    final pendingData = _prefs?.getString('fintrack_pending_payment');
+    if (pendingData != null) {
+      try {
+        _pendingPayment = jsonDecode(pendingData);
       } catch (_) {}
     }
 
@@ -129,7 +140,7 @@ class AppProvider extends ChangeNotifier {
 
   Future<void> _loadUserData(String userId) async {
     await Future.wait([
-      fetchTransactions(userId),
+      _setupBillsListener(userId),
       fetchUserGroups(userId),
       _setupNotificationListener(userId),
     ]);
@@ -252,6 +263,7 @@ class AppProvider extends ChangeNotifier {
 
   Future<void> logout() async {
     _notifSub?.cancel();
+    _billsSub?.cancel();
     await _auth.signOut();
     _user = null;
     _transactions = [];
@@ -260,6 +272,18 @@ class AppProvider extends ChangeNotifier {
     _dashboardData = const DashboardData();
     _recentActivities = [];
     _prefs?.remove('fintrack_user');
+    _pendingPayment = null;
+    _prefs?.remove('fintrack_pending_payment');
+    notifyListeners();
+  }
+
+  void setPendingPayment(Map<String, dynamic>? data) {
+    _pendingPayment = data;
+    if (data == null) {
+      _prefs?.remove('fintrack_pending_payment');
+    } else {
+      _prefs?.setString('fintrack_pending_payment', jsonEncode(data));
+    }
     notifyListeners();
   }
 
@@ -267,6 +291,7 @@ class AppProvider extends ChangeNotifier {
     if (_user == null) return;
     final uid = _user!.id;
     _notifSub?.cancel();
+    _billsSub?.cancel();
 
     try {
       // 1. Delete Auth account FIRST — frees the email for re-registration
@@ -464,26 +489,22 @@ class AppProvider extends ChangeNotifier {
 
   // ============ TRANSACTIONS / BILLS ============
 
-  Future<void> fetchTransactions(String userId) async {
-    if (userId == 'guest') {
-      _computeStats(_localTransactions, 'guest');
-      return;
-    }
-    try {
-      final snap = await _db
-          .collection('bills')
-          .where('memberIds', arrayContains: userId)
-          .get();
-      final allTx =
-          snap.docs.map((d) => tx.Transaction.fromFirestore(d)).toList()
-            ..sort((a, b) {
-              if (a.createdAt != null && b.createdAt != null) {
-                return b.createdAt!.compareTo(a.createdAt!);
-              }
-              return '${b.date}T${b.time}'.compareTo('${a.date}T${a.time}');
-            });
+  Future<void> _setupBillsListener(String userId) async {
+    _billsSub?.cancel();
+    _billsSub = _db
+        .collection('bills')
+        .where('memberIds', arrayContains: userId)
+        .snapshots()
+        .listen((snap) async {
+      final allTx = snap.docs.map((d) => tx.Transaction.fromFirestore(d)).toList()
+        ..sort((a, b) {
+          if (a.createdAt != null && b.createdAt != null) {
+            return b.createdAt!.compareTo(a.createdAt!);
+          }
+          return '${b.date}T${b.time}'.compareTo('${a.date}T${a.time}');
+        });
 
-      // Cache encountered users FIRST (include payerIds too, they may not be in memberIds)
+      // Cache encountered users
       final allMemberIds = allTx.expand((t) => t.memberIds).toSet();
       for (final t in allTx) {
         if (t.payerId != null && t.payerId!.isNotEmpty) {
@@ -495,11 +516,29 @@ class AppProvider extends ChangeNotifier {
         await fetchUsersByIds(allIdsToFetch);
       }
 
-      // Now compute stats & notify listeners — users are already cached
       _computeStats(allTx, userId);
-    } catch (e) {
-      debugPrint('fetchTransactions failed: $e');
+    });
+  }
+
+  Future<void> fetchTransactions(String userId) async {
+    if (userId == 'guest') {
+      _computeStats(_localTransactions, 'guest');
+      return;
     }
+    // We now have a stream listener, but this method can still be used for one-time fetch if needed
+    final snap = await _db
+        .collection('bills')
+        .where('memberIds', arrayContains: userId)
+        .get();
+    
+    final allTx = snap.docs.map((d) => tx.Transaction.fromFirestore(d)).toList()
+      ..sort((a, b) {
+        if (a.createdAt != null && b.createdAt != null) {
+          return b.createdAt!.compareTo(a.createdAt!);
+        }
+        return '${b.date}T${b.time}'.compareTo('${a.date}T${a.time}');
+      });
+    _computeStats(allTx, userId);
   }
 
   void _computeStats(List<tx.Transaction> txList, String userId) {
@@ -561,82 +600,80 @@ class AppProvider extends ChangeNotifier {
       return guestBill.id;
     }
 
-    final billData = {
-      ...data,
-      'userId': _user!.id,
-      'memberIds':
-          data['memberIds'] ??
-          (data['members'] != null
-              ? (data['members'] as List).map((m) => m['id']).toList()
-              : [_user!.id]),
-      'createdAt': DateTime.now().toIso8601String(),
-    };
+    // 1. Validation Logic (Perform checks BEFORE any database writes)
+  Wallet? targetWallet;
+  double? walletUpdateAmount;
 
-    final docRef = await _db.collection('bills').add(billData);
+  if (data['wallet'] != null && data['isAdjustment'] != true) {
+    targetWallet = _user!.wallets
+        .where((w) => w.name == data['wallet'])
+        .firstOrNull;
+    
+    if (targetWallet != null) {
+      final amount = (data['amount'] as num).toDouble();
+      
+      // Check for insufficient balance for expenses and splits
+      if ((data['type'] == 'expense' || data['type'] == 'split') && 
+          data['payerId'] == _user!.id &&
+          targetWallet.balance < amount) {
+        throw Exception(
+          'Insufficient balance in your ${targetWallet.name}. Please reconcile or top-up.',
+        );
+      }
 
-    // Auto-update wallet balance (with insufficient funds check)
-    if ((data['type'] == 'expense' || data['type'] == 'income') &&
-        data['wallet'] != null &&
-        data['isAdjustment'] != true) {
-      final targetWallet = _user!.wallets
-          .where((w) => w.name == data['wallet'])
-          .firstOrNull;
-      if (targetWallet != null) {
-        final amount = (data['amount'] as num).toDouble();
-        if (data['type'] == 'expense' && targetWallet.balance < amount) {
-          throw Exception(
-            'Insufficient balance in your ${targetWallet.name}. Please reconcile or top-up.',
-          );
-        }
-        final newBalance = data['type'] == 'expense'
-            ? targetWallet.balance - amount
-            : targetWallet.balance + amount;
-        await _updateWalletInFirestore(targetWallet.id, newBalance);
+      // Calculate balance update
+      if (data['type'] == 'expense' || 
+         (data['type'] == 'split' && data['payerId'] == _user!.id)) {
+        walletUpdateAmount = targetWallet.balance - amount;
+      } else if (data['type'] == 'income') {
+        walletUpdateAmount = targetWallet.balance + amount;
       }
     }
-
-    // Handle split wallet deduction (with insufficient funds check)
-    if (data['type'] == 'split' &&
-        data['wallet'] != null &&
-        data['payerId'] == _user!.id) {
-      final targetWallet = _user!.wallets
-          .where((w) => w.name == data['wallet'])
-          .firstOrNull;
-      if (targetWallet != null) {
-        final amount = (data['amount'] as num).toDouble();
-        if (targetWallet.balance < amount) {
-          throw Exception(
-            'Insufficient balance in your ${targetWallet.name} for this split. Please reconcile or top-up.',
-          );
-        }
-        final newBalance = targetWallet.balance - amount;
-        await _updateWalletInFirestore(targetWallet.id, newBalance);
-      }
-    }
-
-    // Send notifications for splits
-    if (data['type'] == 'split' && data['members'] != null) {
-      final members = data['members'] as List;
-      for (final m in members) {
-        if (m['id'] != data['payerId']) {
-          await _db.collection('notifications').add({
-            'type': 'split_request',
-            'billId': docRef.id,
-            'fromUserId': _user!.id,
-            'fromUserName': _user!.name,
-            'toUserId': m['id'],
-            'amount': m['amount'],
-            'title': data['title'] ?? 'Split Bill',
-            'read': false,
-            'createdAt': DateTime.now().toIso8601String(),
-          });
-        }
-      }
-    }
-
-    await fetchTransactions(_user!.id);
-    return docRef.id;
   }
+
+  // 2. Prepare Data
+  final billData = {
+    ...data,
+    'userId': _user!.id,
+    'memberIds':
+        data['memberIds'] ??
+        (data['members'] != null
+            ? (data['members'] as List).map((m) => m['id']).toList()
+            : [_user!.id]),
+    'createdAt': DateTime.now().toIso8601String(),
+  };
+
+  // 3. Database Writes (Perform only if validation passed)
+  final docRef = await _db.collection('bills').add(billData);
+
+  // Update wallet if needed
+  if (targetWallet != null && walletUpdateAmount != null) {
+    await _updateWalletInFirestore(targetWallet.id, walletUpdateAmount);
+  }
+
+  // Send notifications for splits
+  if (data['type'] == 'split' && data['members'] != null) {
+    final members = data['members'] as List;
+    for (final m in members) {
+      if (m['id'] != data['payerId']) {
+        await _db.collection('notifications').add({
+          'type': 'split_request',
+          'billId': docRef.id,
+          'fromUserId': _user!.id,
+          'fromUserName': _user!.name,
+          'toUserId': m['id'],
+          'amount': m['amount'],
+          'title': data['title'] ?? 'Split Bill',
+          'read': false,
+          'createdAt': DateTime.now().toIso8601String(),
+        });
+      }
+    }
+  }
+
+  await fetchTransactions(_user!.id);
+  return docRef.id;
+}
 
   Future<void> deleteTransaction(tx.Transaction transaction) async {
     if (_user == null) {
@@ -1119,6 +1156,7 @@ class AppProvider extends ChangeNotifier {
   @override
   void dispose() {
     _notifSub?.cancel();
+    _billsSub?.cancel();
     super.dispose();
   }
 }

@@ -21,6 +21,11 @@ import '../screens/splash_screen.dart';
 import '../screens/group_details_screen.dart';
 import '../screens/subscriptions_screen.dart';
 import '../screens/security_screen.dart';
+import '../screens/to_pay_screen.dart';
+import '../screens/to_receive_screen.dart';
+import '../screens/today_spent_screen.dart';
+import '../screens/group_bills_screen.dart';
+import '../screens/spin_wheel_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -80,12 +85,11 @@ GoRouter createRouter(AppProvider provider) {
             pageBuilder: (context, state) =>
                 const NoTransitionPage(child: DashboardScreen()),
           ),
-          GoRoute(
-            path: '/groups',
-            pageBuilder: (context, state) =>
-                const NoTransitionPage(child: GroupsScreen()),
-          ),
         ],
+      ),
+      GoRoute(
+        path: '/groups',
+        builder: (context, state) => const GroupsScreen(),
       ),
       GoRoute(path: '/scan', builder: (context, state) => const ScanScreen()),
       GoRoute(
@@ -96,6 +100,9 @@ GoRouter createRouter(AppProvider provider) {
         },
       ),
       GoRoute(path: '/pools', builder: (context, state) => const PoolsScreen()),
+      GoRoute(path: '/to-pay', builder: (context, state) => const ToPayScreen()),
+      GoRoute(path: '/to-receive', builder: (context, state) => const ToReceiveScreen()),
+      GoRoute(path: '/today-spent', builder: (context, state) => const TodaySpentScreen()),
       GoRoute(
         path: '/profile',
         builder: (context, state) => const ProfileScreen(),
@@ -142,6 +149,23 @@ GoRouter createRouter(AppProvider provider) {
         builder: (context, state) {
           final groupId = state.pathParameters['id'] ?? '';
           return GroupDetailsScreen(groupId: groupId);
+        },
+      ),
+      GoRoute(
+        path: '/group-bills/:id',
+        builder: (context, state) {
+          final groupId = state.pathParameters['id'] ?? '';
+          final groupName = state.uri.queryParameters['name'] ?? 'Group';
+          return GroupBillsScreen(groupId: groupId, groupName: groupName);
+        },
+      ),
+      GoRoute(
+        path: '/spin-wheel',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          final members = (extra?['memberNames'] as List?)?.map((e) => e.toString()).toList() ?? [];
+          final groupName = extra?['groupName'] as String? ?? 'Group';
+          return SpinWheelScreen(memberNames: members, groupName: groupName);
         },
       ),
       GoRoute(

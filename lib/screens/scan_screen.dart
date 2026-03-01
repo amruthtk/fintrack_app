@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:android_intent_plus/android_intent.dart';
 import 'package:provider/provider.dart';
@@ -202,6 +203,8 @@ class _ScanScreenState extends State<ScanScreen> {
         'time': Helpers.currentTime(),
       });
 
+      provider.setPendingPayment(null);
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -255,17 +258,115 @@ class _ScanScreenState extends State<ScanScreen> {
         body: Stack(
           children: [
             MobileScanner(controller: _controller, onDetect: _handleBarcode),
-            // HUD Overlay
-            Center(
-              child: Container(
-                width: 250,
-                height: 250,
-                decoration: BoxDecoration(
-                  border: Border.all(color: const Color(0xFF6366F1), width: 3),
-                  borderRadius: BorderRadius.circular(32),
-                ),
+
+            // Torch (Top Right)
+            Positioned(
+              top: 20,
+              right: 20,
+              child: ValueListenableBuilder(
+                valueListenable: _controller,
+                builder: (context, state, child) {
+                  final torchIcon =
+                      state.torchState == TorchState.on
+                          ? Icons.highlight_rounded
+                          : Icons.highlight_outlined;
+                  return GestureDetector(
+                    onTap: () => _controller.toggleTorch(),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.5),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.2),
+                        ),
+                      ),
+                      child: Icon(torchIcon, color: Colors.white, size: 24),
+                    ),
+                  );
+                },
               ),
             ),
+
+            // Scanner HUD
+            Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 250,
+                    height: 250,
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: const Color(0xFF6366F1),
+                        width: 3,
+                      ),
+                      borderRadius: BorderRadius.circular(32),
+                    ),
+                  ),
+                  const SizedBox(height: 48),
+
+                  // Upload from Gallery Button
+                  GestureDetector(
+                    onTap: () async {
+                      final picker = ImagePicker();
+                      final image = await picker.pickImage(
+                        source: ImageSource.gallery,
+                      );
+                      if (image != null) {
+                        final result = await _controller.analyzeImage(
+                          image.path,
+                        );
+                        if (result != null) {
+                          // Result will be handled by onDetect
+                        } else {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('No QR code found in image'),
+                              ),
+                            );
+                          }
+                        }
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 14,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(100),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.2),
+                        ),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.photo_library_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                          SizedBox(width: 10),
+                          Text(
+                            'Upload from Gallery',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
             Positioned(
               bottom: 60,
               left: 0,
@@ -421,6 +522,16 @@ class _UpiPaymentSheetState extends State<_UpiPaymentSheet> {
         (w) => w.id == _selectedWalletId,
       );
 
+      final pendingData = {
+        'amount': amount,
+        'appName': app.name,
+        'walletId': _selectedWalletId,
+        'walletType': wallet?.type,
+        'merchantName': widget.merchantName,
+        'category': 'Shopping', // Default from ScanScreen
+      };
+      provider.setPendingPayment(pendingData);
+
       _showPaymentConfirmation(
         amount: amount,
         appName: app.name,
@@ -556,6 +667,7 @@ class _UpiPaymentSheetState extends State<_UpiPaymentSheet> {
                       child: OutlinedButton(
                         onPressed: () {
                           Navigator.pop(ctx);
+                          context.read<AppProvider>().setPendingPayment(null);
                           if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
@@ -1088,6 +1200,11 @@ class _UpiPaymentSheetState extends State<_UpiPaymentSheet> {
             )
             .toList() ??
         [];
+    
+    if (_selectedWalletId == null && wallets.isNotEmpty) {
+      final bank = wallets.where((w) => w.type == 'bank').firstOrNull;
+      _selectedWalletId = bank?.id ?? wallets.first.id;
+    }
 
     return Container(
       padding: EdgeInsets.fromLTRB(
@@ -1204,7 +1321,7 @@ class _UpiPaymentSheetState extends State<_UpiPaymentSheet> {
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: wallets.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                separatorBuilder: (ctx, index) => const SizedBox(width: 12),
                 itemBuilder: (ctx, i) {
                   final w = wallets[i];
                   final active = _selectedWalletId == w.id;
