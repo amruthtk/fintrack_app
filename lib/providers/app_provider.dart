@@ -77,6 +77,8 @@ class AppProvider extends ChangeNotifier {
   bool _isSyncing = false;
   bool get isSyncing => _isSyncing;
 
+  SharedPreferences? _prefs;
+  StreamSubscription? _notifSub;
   StreamSubscription? _billsSub;
   Map<String, dynamic>? _pendingPayment;
   Map<String, dynamic>? get pendingPayment => _pendingPayment;
