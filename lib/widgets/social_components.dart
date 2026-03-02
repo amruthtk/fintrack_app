@@ -122,7 +122,7 @@ class SettlementCard extends StatelessWidget {
                     icon: const Icon(Icons.payment_rounded, size: 16),
                     label: const Text('Pay UPI'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF6366F1),
+                      backgroundColor: const Color(0xFF2563EB),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),

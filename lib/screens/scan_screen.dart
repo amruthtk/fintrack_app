@@ -150,27 +150,34 @@ class _ScanScreenState extends State<ScanScreen> {
     final merchantName = uri.queryParameters['pn'] ?? 'Merchant';
     final upiId = uri.queryParameters['pa'] ?? '';
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => _UpiPaymentSheet(
-        merchantName: merchantName,
-        upiId: upiId,
-        upiUri: upiUri,
-        onComplete: (amount, walletId, walletType, {category, title}) {
-          _recordTransaction(
-            merchantName,
-            amount,
-            walletId,
-            walletType,
-            title: title,
-            category: category,
-          );
-        },
-        onCancel: () {
-          setState(() => _isProcessing = false);
-        },
+    // Stop the camera before navigating
+    _controller.stop();
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (ctx) => _UpiPaymentPage(
+          merchantName: merchantName,
+          upiId: upiId,
+          upiUri: upiUri,
+          onComplete: (amount, walletId, walletType, {category, title}) {
+            _recordTransaction(
+              merchantName,
+              amount,
+              walletId,
+              walletType,
+              title: title,
+              category: category,
+            );
+          },
+          onCancel: () {
+            // Restart camera when user goes back
+            if (mounted) {
+              _controller.start();
+              setState(() => _isProcessing = false);
+            }
+          },
+        ),
       ),
     ).then((_) {
       if (mounted) setState(() => _isProcessing = false);
@@ -266,10 +273,9 @@ class _ScanScreenState extends State<ScanScreen> {
               child: ValueListenableBuilder(
                 valueListenable: _controller,
                 builder: (context, state, child) {
-                  final torchIcon =
-                      state.torchState == TorchState.on
-                          ? Icons.highlight_rounded
-                          : Icons.highlight_outlined;
+                  final torchIcon = state.torchState == TorchState.on
+                      ? Icons.highlight_rounded
+                      : Icons.highlight_outlined;
                   return GestureDetector(
                     onTap: () => _controller.toggleTorch(),
                     child: Container(
@@ -298,7 +304,7 @@ class _ScanScreenState extends State<ScanScreen> {
                     height: 250,
                     decoration: BoxDecoration(
                       border: Border.all(
-                        color: const Color(0xFF6366F1),
+                        color: const Color(0xFF2563EB),
                         width: 3,
                       ),
                       borderRadius: BorderRadius.circular(32),
@@ -389,7 +395,7 @@ class _ScanScreenState extends State<ScanScreen> {
   }
 }
 
-class _UpiPaymentSheet extends StatefulWidget {
+class _UpiPaymentPage extends StatefulWidget {
   final String merchantName;
   final String upiId;
   final String upiUri;
@@ -403,7 +409,7 @@ class _UpiPaymentSheet extends StatefulWidget {
   onComplete;
   final VoidCallback onCancel;
 
-  const _UpiPaymentSheet({
+  const _UpiPaymentPage({
     required this.merchantName,
     required this.upiId,
     required this.upiUri,
@@ -412,10 +418,10 @@ class _UpiPaymentSheet extends StatefulWidget {
   });
 
   @override
-  State<_UpiPaymentSheet> createState() => _UpiPaymentSheetState();
+  State<_UpiPaymentPage> createState() => _UpiPaymentPageState();
 }
 
-class _UpiPaymentSheetState extends State<_UpiPaymentSheet> {
+class _UpiPaymentPageState extends State<_UpiPaymentPage> {
   final _amountCtrl = TextEditingController();
   String? _selectedWalletId;
   List<UpiApp> _installedApps = [];
@@ -479,14 +485,22 @@ class _UpiPaymentSheetState extends State<_UpiPaymentSheet> {
       return;
     }
 
-    // Construct the UPI URI with amount
-    final payUri = Uri.parse(widget.upiUri).replace(
-      queryParameters: {
-        ...Uri.parse(widget.upiUri).queryParameters,
-        'am': amount.toStringAsFixed(2),
-        'cu': 'INR',
-      },
-    );
+    // Build UPI URI manually to avoid URI-encoding the amount decimal
+    // (Uri.replace encodes 5.00 → 5%2E00, which some UPI apps misread)
+    final baseParams = Uri.parse(widget.upiUri).queryParameters;
+    final mergedParams = {
+      ...baseParams,
+      'am': amount.toStringAsFixed(2),
+      'cu': 'INR',
+    };
+    final queryParts = <String>[];
+    for (final e in mergedParams.entries) {
+      final val = (e.key == 'am' || e.key == 'cu')
+          ? e.value
+          : Uri.encodeComponent(e.value);
+      queryParts.add('${e.key}=$val');
+    }
+    final payUri = Uri.parse('upi://pay?${queryParts.join('&')}');
 
     bool launched = false;
 
@@ -983,7 +997,7 @@ class _UpiPaymentSheetState extends State<_UpiPaymentSheet> {
                               ),
                               decoration: BoxDecoration(
                                 color: active
-                                    ? const Color(0xFF6366F1)
+                                    ? const Color(0xFF2563EB)
                                     : (isDark
                                           ? const Color(0xFF0F172A)
                                           : const Color(0xFFF1F5F9)),
@@ -1055,7 +1069,7 @@ class _UpiPaymentSheetState extends State<_UpiPaymentSheet> {
                                 ),
                                 decoration: BoxDecoration(
                                   color: !isSplit
-                                      ? const Color(0xFF6366F1)
+                                      ? const Color(0xFF2563EB)
                                       : (isDark
                                             ? const Color(0xFF0F172A)
                                             : const Color(0xFFF1F5F9)),
@@ -1101,7 +1115,7 @@ class _UpiPaymentSheetState extends State<_UpiPaymentSheet> {
                                 ),
                                 decoration: BoxDecoration(
                                   color: isSplit
-                                      ? const Color(0xFF6366F1)
+                                      ? const Color(0xFF2563EB)
                                       : (isDark
                                             ? const Color(0xFF0F172A)
                                             : const Color(0xFFF1F5F9)),
@@ -1160,7 +1174,7 @@ class _UpiPaymentSheetState extends State<_UpiPaymentSheet> {
                           }
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF6366F1),
+                          backgroundColor: const Color(0xFF2563EB),
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
@@ -1200,237 +1214,324 @@ class _UpiPaymentSheetState extends State<_UpiPaymentSheet> {
             )
             .toList() ??
         [];
-    
+
     if (_selectedWalletId == null && wallets.isNotEmpty) {
       final bank = wallets.where((w) => w.type == 'bank').firstOrNull;
       _selectedWalletId = bank?.id ?? wallets.first.id;
     }
 
-    return Container(
-      padding: EdgeInsets.fromLTRB(
-        24,
-        12,
-        24,
-        MediaQuery.of(context).viewInsets.bottom + 32,
-      ),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-      ),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) widget.onCancel();
+      },
+      child: Scaffold(
+        backgroundColor: isDark
+            ? const Color(0xFF0F172A)
+            : const Color(0xFFF8FAFC),
+        appBar: AppBar(
+          title: const Text(
+            'Payment Details',
+            style: TextStyle(
+              fontWeight: FontWeight.w900,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+          centerTitle: false,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: Icon(
+              Icons.arrow_back_rounded,
+              color: isDark ? Colors.white : const Color(0xFF0F172A),
+            ),
+            onPressed: () {
+              widget.onCancel();
+              Navigator.pop(context);
+            },
+          ),
+        ),
+        body: SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(
+            20,
+            8,
+            20,
+            MediaQuery.of(context).viewInsets.bottom + 32,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Merchant Info Card
+              Container(
+                padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.grey.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(2),
+                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 12,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Merchant Info
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF6366F1).withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.store_rounded,
-                    color: Color(0xFF6366F1),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.merchantName,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      Text(
-                        widget.upiId,
-                        style: TextStyle(
-                          color: isDark ? Colors.white38 : Colors.black38,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 32),
-
-            // Amount Input
-            Text(
-              'Enter Amount',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 1.2,
-                color: isDark ? Colors.white54 : Colors.black54,
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _amountCtrl,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              autofocus: true,
-              style: const TextStyle(
-                fontSize: 48,
-                fontWeight: FontWeight.w900,
-                letterSpacing: -1,
-              ),
-              decoration: const InputDecoration(
-                prefixText: '₹ ',
-                prefixStyle: TextStyle(color: Color(0xFF6366F1)),
-                hintText: '0',
-                border: InputBorder.none,
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Pay From (wallet selector)
-            Text(
-              'Pay From',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 1.2,
-                color: isDark ? Colors.white54 : Colors.black54,
-              ),
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              height: 50,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: wallets.length,
-                separatorBuilder: (ctx, index) => const SizedBox(width: 12),
-                itemBuilder: (ctx, i) {
-                  final w = wallets[i];
-                  final active = _selectedWalletId == w.id;
-                  final walletIcon = w.type == 'credit'
-                      ? Icons.credit_card_rounded
-                      : w.type == 'bank'
-                      ? Icons.account_balance_rounded
-                      : Icons.payments_rounded;
-                  return GestureDetector(
-                    onTap: () => setState(() => _selectedWalletId = w.id),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: active
-                            ? const Color(0xFF6366F1)
-                            : (isDark
-                                  ? const Color(0xFF0F172A)
-                                  : const Color(0xFFF1F5F9)),
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF2563EB), Color(0xFF7C3AED)],
+                        ),
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      alignment: Alignment.center,
-                      child: Row(
+                      child: const Icon(
+                        Icons.store_rounded,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(
-                            walletIcon,
-                            size: 16,
-                            color: active
-                                ? Colors.white
-                                : (isDark ? Colors.white70 : Colors.black54),
-                          ),
-                          const SizedBox(width: 8),
                           Text(
-                            w.name,
+                            widget.merchantName,
                             style: TextStyle(
-                              color: active
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              color: isDark
                                   ? Colors.white
-                                  : (isDark ? Colors.white70 : Colors.black87),
-                              fontWeight: FontWeight.w600,
+                                  : const Color(0xFF0F172A),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            widget.upiId,
+                            style: TextStyle(
+                              color: isDark
+                                  ? const Color(0xFF64748B)
+                                  : const Color(0xFF94A3B8),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
                         ],
                       ),
                     ),
-                  );
-                },
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 28),
+              const SizedBox(height: 28),
 
-            // UPI Apps Grid
-            Text(
-              'Pay With',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 1.2,
-                color: isDark ? Colors.white54 : Colors.black54,
+              // Amount Input
+              Text(
+                'AMOUNT',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.2,
+                  color: isDark
+                      ? const Color(0xFF64748B)
+                      : const Color(0xFF94A3B8),
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            _loadingApps
-                ? const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(24),
-                      child: CircularProgressIndicator(
-                        color: Color(0xFF6366F1),
-                        strokeWidth: 2,
-                      ),
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 12,
+                      offset: const Offset(0, 2),
                     ),
-                  )
-                : _installedApps.isEmpty
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Text(
-                        'No UPI apps found',
-                        style: TextStyle(
-                          color: isDark
-                              ? Colors.white
-                              : const Color(0xFF0F172A),
-                          fontWeight: FontWeight.w900,
-                          fontStyle: FontStyle.italic,
-                        ),
-                      ),
-                    ),
-                  )
-                : GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 4,
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 16,
-                          childAspectRatio: 0.85,
-                        ),
-                    itemCount: _installedApps.length,
-                    itemBuilder: (ctx, i) {
-                      final app = _installedApps[i];
-                      return _UpiAppButton(
-                        app: app,
-                        isDark: isDark,
-                        onTap: () => _launchUpiApp(app),
-                      );
-                    },
+                  ],
+                ),
+                child: TextField(
+                  controller: _amountCtrl,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
                   ),
-            const SizedBox(height: 16),
-          ],
+                  autofocus: true,
+                  style: TextStyle(
+                    fontSize: 42,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -1,
+                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                  ),
+                  decoration: const InputDecoration(
+                    prefixText: '₹ ',
+                    prefixStyle: TextStyle(
+                      color: Color(0xFF2563EB),
+                      fontSize: 42,
+                      fontWeight: FontWeight.w900,
+                    ),
+                    hintText: '0',
+                    hintStyle: TextStyle(color: Color(0xFFCBD5E1)),
+                    border: InputBorder.none,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 28),
+
+              // Pay From (wallet selector)
+              Text(
+                'PAY FROM',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.2,
+                  color: isDark
+                      ? const Color(0xFF64748B)
+                      : const Color(0xFF94A3B8),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 50,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: wallets.length,
+                  separatorBuilder: (ctx, index) => const SizedBox(width: 12),
+                  itemBuilder: (ctx, i) {
+                    final w = wallets[i];
+                    final active = _selectedWalletId == w.id;
+                    final walletIcon = w.type == 'credit'
+                        ? Icons.credit_card_rounded
+                        : w.type == 'bank'
+                        ? Icons.account_balance_rounded
+                        : Icons.payments_rounded;
+                    return GestureDetector(
+                      onTap: () => setState(() => _selectedWalletId = w.id),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        decoration: BoxDecoration(
+                          color: active
+                              ? const Color(0xFF2563EB)
+                              : (isDark
+                                    ? const Color(0xFF1E293B)
+                                    : Colors.white),
+                          borderRadius: BorderRadius.circular(16),
+                          border: !active
+                              ? Border.all(
+                                  color: isDark
+                                      ? const Color(0xFF334155)
+                                      : const Color(0xFFE2E8F0),
+                                )
+                              : null,
+                          boxShadow: active
+                              ? [
+                                  BoxShadow(
+                                    color: const Color(
+                                      0xFF2563EB,
+                                    ).withValues(alpha: 0.3),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ]
+                              : null,
+                        ),
+                        alignment: Alignment.center,
+                        child: Row(
+                          children: [
+                            Icon(
+                              walletIcon,
+                              size: 16,
+                              color: active
+                                  ? Colors.white
+                                  : (isDark ? Colors.white70 : Colors.black54),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              w.name,
+                              style: TextStyle(
+                                color: active
+                                    ? Colors.white
+                                    : (isDark
+                                          ? Colors.white70
+                                          : Colors.black87),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 28),
+
+              // UPI Apps Grid
+              Text(
+                'PAY WITH',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.2,
+                  color: isDark
+                      ? const Color(0xFF64748B)
+                      : const Color(0xFF94A3B8),
+                ),
+              ),
+              const SizedBox(height: 16),
+              _loadingApps
+                  ? const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(24),
+                        child: CircularProgressIndicator(
+                          color: Color(0xFF2563EB),
+                          strokeWidth: 2,
+                        ),
+                      ),
+                    )
+                  : _installedApps.isEmpty
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Text(
+                          'No UPI apps found',
+                          style: TextStyle(
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xFF0F172A),
+                            fontWeight: FontWeight.w900,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ),
+                    )
+                  : GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 4,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 16,
+                            childAspectRatio: 0.85,
+                          ),
+                      itemCount: _installedApps.length,
+                      itemBuilder: (ctx, i) {
+                        final app = _installedApps[i];
+                        return _UpiAppButton(
+                          app: app,
+                          isDark: isDark,
+                          onTap: () => _launchUpiApp(app),
+                        );
+                      },
+                    ),
+              const SizedBox(height: 24),
+            ],
+          ),
         ),
       ),
     );

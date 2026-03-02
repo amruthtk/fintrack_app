@@ -92,15 +92,15 @@ class _ScannerScreenState extends State<ScannerScreen>
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFF6366F1).withValues(alpha: 0.1),
+                color: const Color(0xFF2563EB).withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.qr_code_2_rounded, color: Color(0xFF6366F1), size: 32),
+              child: const Icon(Icons.qr_code_2_rounded, color: Color(0xFF2563EB), size: 32),
             ),
             const SizedBox(height: 16),
             Text(
               'Scan Result',
-              style: GoogleFonts.plusJakartaSans(
+              style: GoogleFonts.inter(
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
                 color: isDark ? Colors.white : const Color(0xFF0F172A),
@@ -134,10 +134,10 @@ class _ScannerScreenState extends State<ScannerScreen>
                     },
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      side: const BorderSide(color: Color(0xFF6366F1)),
+                      side: const BorderSide(color: Color(0xFF2563EB)),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    child: const Text('Scan Again', style: TextStyle(color: Color(0xFF6366F1), fontWeight: FontWeight.w600)),
+                    child: const Text('Scan Again', style: TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.w600)),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -148,7 +148,7 @@ class _ScannerScreenState extends State<ScannerScreen>
                       context.pop(); // Go back from scanner
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF6366F1),
+                      backgroundColor: const Color(0xFF2563EB),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
@@ -212,7 +212,7 @@ class _ScannerScreenState extends State<ScannerScreen>
                           children: [
                             Text(
                               name,
-                              style: GoogleFonts.plusJakartaSans(
+                              style: GoogleFonts.inter(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w800,
                                 color: isDark ? Colors.white : const Color(0xFF0F172A),
@@ -245,10 +245,10 @@ class _ScannerScreenState extends State<ScannerScreen>
                     controller: amountCtrl,
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.plusJakartaSans(
+                    style: GoogleFonts.inter(
                       fontSize: 48,
                       fontWeight: FontWeight.w900,
-                      color: const Color(0xFF6366F1),
+                      color: const Color(0xFF2563EB),
                     ),
                     decoration: const InputDecoration(
                       prefixText: '₹ ',
@@ -280,11 +280,11 @@ class _ScannerScreenState extends State<ScannerScreen>
                       style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF6366F1),
+                      backgroundColor: const Color(0xFF2563EB),
                       padding: const EdgeInsets.symmetric(vertical: 18),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       elevation: 8,
-                      shadowColor: const Color(0xFF6366F1).withValues(alpha: 0.4),
+                      shadowColor: const Color(0xFF2563EB).withValues(alpha: 0.4),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -437,7 +437,7 @@ class _ScannerScreenState extends State<ScannerScreen>
                   const Spacer(),
                   Text(
                     'Scan QR / Barcode',
-                    style: GoogleFonts.plusJakartaSans(
+                    style: GoogleFonts.inter(
                       color: Colors.white.withValues(alpha: 0.9),
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
@@ -621,15 +621,15 @@ class _ScanOverlay extends StatelessWidget {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            const Color(0xFF6366F1).withValues(alpha: 0.0),
-                            const Color(0xFF6366F1),
-                            const Color(0xFF8B5CF6),
-                            const Color(0xFF6366F1).withValues(alpha: 0.0),
+                            const Color(0xFF2563EB).withValues(alpha: 0.0),
+                            const Color(0xFF2563EB),
+                            const Color(0xFF1E40AF),
+                            const Color(0xFF2563EB).withValues(alpha: 0.0),
                           ],
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF6366F1).withValues(alpha: 0.5),
+                            color: const Color(0xFF2563EB).withValues(alpha: 0.5),
                             blurRadius: 8,
                             spreadRadius: 2,
                           ),
@@ -651,7 +651,7 @@ class _ScanOverlay extends StatelessWidget {
   List<Widget> _buildCorners() {
     const cornerLength = 24.0;
     const cornerWidth = 3.0;
-    const color = Color(0xFF6366F1);
+    const color = Color(0xFF2563EB);
 
     return [
       // Top-left

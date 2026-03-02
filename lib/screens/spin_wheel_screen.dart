@@ -28,11 +28,11 @@ class _SpinWheelScreenState extends State<SpinWheelScreen>
 
   // Vibrant colors for wheel segments
   static const List<Color> _segmentColors = [
-    Color(0xFF6366F1), // Indigo
+    Color(0xFF2563EB), // Indigo
     Color(0xFFF43F5E), // Rose
     Color(0xFF10B981), // Emerald
     Color(0xFFF59E0B), // Amber
-    Color(0xFF8B5CF6), // Violet
+    Color(0xFF1E40AF), // Violet
     Color(0xFF06B6D4), // Cyan
     Color(0xFFEC4899), // Pink
     Color(0xFF14B8A6), // Teal
@@ -151,7 +151,7 @@ class _SpinWheelScreenState extends State<SpinWheelScreen>
         ),
         title: Text(
           'Spin the Wheel!',
-          style: GoogleFonts.plusJakartaSans(
+          style: GoogleFonts.inter(
             fontSize: 20,
             fontWeight: FontWeight.w800,
             color: isDark ? Colors.white : const Color(0xFF0F172A),
@@ -166,7 +166,7 @@ class _SpinWheelScreenState extends State<SpinWheelScreen>
           // Subtitle
           Text(
             '${widget.groupName} • Who pays?',
-            style: GoogleFonts.plusJakartaSans(
+            style: GoogleFonts.inter(
               fontSize: 14,
               color: const Color(0xFF94A3B8),
               fontWeight: FontWeight.w500,
@@ -193,7 +193,7 @@ class _SpinWheelScreenState extends State<SpinWheelScreen>
                 Flexible(
                   child: Text(
                     'Spin to decide who pays the bill!',
-                    style: GoogleFonts.plusJakartaSans(
+                    style: GoogleFonts.inter(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                       color: const Color(0xFFF59E0B),
@@ -239,7 +239,7 @@ class _SpinWheelScreenState extends State<SpinWheelScreen>
                                   shape: BoxShape.circle,
                                   boxShadow: [
                                     BoxShadow(
-                                      color: const Color(0xFF6366F1)
+                                      color: const Color(0xFF2563EB)
                                           .withValues(alpha: _isSpinning ? 0.5 : 0.2),
                                       blurRadius: _isSpinning ? 30 : 15,
                                       spreadRadius: _isSpinning ? 2 : 0,
@@ -276,8 +276,8 @@ class _SpinWheelScreenState extends State<SpinWheelScreen>
                                               const Color(0xFFF97316),
                                             ]
                                           : [
-                                              const Color(0xFF6366F1),
-                                              const Color(0xFF8B5CF6),
+                                              const Color(0xFF2563EB),
+                                              const Color(0xFF1E40AF),
                                             ],
                                     ),
                                     shape: BoxShape.circle,
@@ -285,7 +285,7 @@ class _SpinWheelScreenState extends State<SpinWheelScreen>
                                       BoxShadow(
                                         color: (_isSpinning
                                                 ? const Color(0xFFF59E0B)
-                                                : const Color(0xFF6366F1))
+                                                : const Color(0xFF2563EB))
                                             .withValues(alpha: 0.5),
                                         blurRadius: 16,
                                         offset: const Offset(0, 4),
@@ -299,7 +299,7 @@ class _SpinWheelScreenState extends State<SpinWheelScreen>
                                   child: Center(
                                     child: Text(
                                       _isSpinning ? '🔥' : 'SPIN',
-                                      style: GoogleFonts.plusJakartaSans(
+                                      style: GoogleFonts.inter(
                                         fontSize: _isSpinning
                                             ? wheelSize * 0.055
                                             : wheelSize * 0.04,
@@ -336,9 +336,9 @@ class _SpinWheelScreenState extends State<SpinWheelScreen>
               child: ElevatedButton(
                 onPressed: _isSpinning ? null : _spin,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF6366F1),
+                  backgroundColor: const Color(0xFF2563EB),
                   disabledBackgroundColor:
-                      const Color(0xFF6366F1).withValues(alpha: 0.5),
+                      const Color(0xFF2563EB).withValues(alpha: 0.5),
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
@@ -360,7 +360,7 @@ class _SpinWheelScreenState extends State<SpinWheelScreen>
                       const SizedBox(width: 12),
                       Text(
                         'Spinning...',
-                        style: GoogleFonts.plusJakartaSans(
+                        style: GoogleFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
                         ),
@@ -370,7 +370,7 @@ class _SpinWheelScreenState extends State<SpinWheelScreen>
                       const SizedBox(width: 10),
                       Text(
                         'Spin the Wheel!',
-                        style: GoogleFonts.plusJakartaSans(
+                        style: GoogleFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
                         ),
@@ -502,7 +502,7 @@ class _ResultPopupState extends State<_ResultPopup>
                         // Multi-layered glow
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF6366F1).withValues(alpha: 0.4 * _pulseAnimation.value),
+                            color: const Color(0xFF2563EB).withValues(alpha: 0.4 * _pulseAnimation.value),
                             blurRadius: 60,
                             spreadRadius: -10,
                           ),
@@ -534,7 +534,7 @@ class _ResultPopupState extends State<_ResultPopup>
                             decoration: BoxDecoration(
                               border: Border.all(
                                 color: Color.lerp(
-                                  const Color(0xFF6366F1),
+                                  const Color(0xFF2563EB),
                                   const Color(0xFFF59E0B),
                                   _pulseAnimation.value,
                                 )!.withValues(alpha: 0.4),
@@ -572,7 +572,7 @@ class _ResultPopupState extends State<_ResultPopup>
                                   ),
                                   child: Text(
                                     widget.funMessage,
-                                    style: GoogleFonts.plusJakartaSans(
+                                    style: GoogleFonts.inter(
                                       fontSize: 13,
                                       color: const Color(0xFFF59E0B),
                                       fontWeight: FontWeight.w600,
@@ -598,7 +598,7 @@ class _ResultPopupState extends State<_ResultPopup>
                                         shape: BoxShape.circle,
                                         border: Border.all(
                                           color: Color.lerp(
-                                            const Color(0xFF6366F1),
+                                            const Color(0xFF2563EB),
                                             const Color(0xFFF59E0B),
                                             _pulseAnimation.value,
                                           )!.withValues(alpha: 0.5),
@@ -606,7 +606,7 @@ class _ResultPopupState extends State<_ResultPopup>
                                         ),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: const Color(0xFF6366F1)
+                                            color: const Color(0xFF2563EB)
                                                 .withValues(alpha: 0.3 * _pulseAnimation.value),
                                             blurRadius: 24,
                                             spreadRadius: 2,
@@ -623,11 +623,11 @@ class _ResultPopupState extends State<_ResultPopup>
                                         gradient: const LinearGradient(
                                           begin: Alignment.topLeft,
                                           end: Alignment.bottomRight,
-                                          colors: [Color(0xFF6366F1), Color(0xFF8B5CF6), Color(0xFFA78BFA)],
+                                          colors: [Color(0xFF2563EB), Color(0xFF1E40AF), Color(0xFFA78BFA)],
                                         ),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: const Color(0xFF6366F1).withValues(alpha: 0.5),
+                                            color: const Color(0xFF2563EB).withValues(alpha: 0.5),
                                             blurRadius: 20,
                                             offset: const Offset(0, 6),
                                           ),
@@ -638,7 +638,7 @@ class _ResultPopupState extends State<_ResultPopup>
                                         widget.selectedMember.isNotEmpty
                                             ? widget.selectedMember[0].toUpperCase()
                                             : '?',
-                                        style: GoogleFonts.plusJakartaSans(
+                                        style: GoogleFonts.inter(
                                           fontSize: 40,
                                           fontWeight: FontWeight.w900,
                                           color: Colors.white,
@@ -659,7 +659,7 @@ class _ResultPopupState extends State<_ResultPopup>
                                 // ── Name with shimmer ──
                                 Text(
                                   widget.selectedMember,
-                                  style: GoogleFonts.plusJakartaSans(
+                                  style: GoogleFonts.inter(
                                     fontSize: 28,
                                     fontWeight: FontWeight.w900,
                                     color: Colors.white,
@@ -674,7 +674,7 @@ class _ResultPopupState extends State<_ResultPopup>
                                     .shimmer(
                                       delay: 300.ms,
                                       duration: 1800.ms,
-                                      color: const Color(0xFF8B5CF6).withValues(alpha: 0.5),
+                                      color: const Color(0xFF1E40AF).withValues(alpha: 0.5),
                                     ),
 
                                 const SizedBox(height: 4),
@@ -701,7 +701,7 @@ class _ResultPopupState extends State<_ResultPopup>
                                       const SizedBox(width: 6),
                                       Text(
                                         'HAS TO PAY!',
-                                        style: GoogleFonts.plusJakartaSans(
+                                        style: GoogleFonts.inter(
                                           fontSize: 15,
                                           fontWeight: FontWeight.w800,
                                           color: const Color(0xFFF59E0B),
@@ -739,7 +739,7 @@ class _ResultPopupState extends State<_ResultPopup>
                                               child: Center(
                                                 child: Text(
                                                   'Done',
-                                                  style: GoogleFonts.plusJakartaSans(
+                                                  style: GoogleFonts.inter(
                                                     fontSize: 14,
                                                     fontWeight: FontWeight.w600,
                                                     color: const Color(0xFF94A3B8),
@@ -757,12 +757,12 @@ class _ResultPopupState extends State<_ResultPopup>
                                       child: Container(
                                         decoration: BoxDecoration(
                                           gradient: const LinearGradient(
-                                            colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                                            colors: [Color(0xFF2563EB), Color(0xFF1E40AF)],
                                           ),
                                           borderRadius: BorderRadius.circular(16),
                                           boxShadow: [
                                             BoxShadow(
-                                              color: const Color(0xFF6366F1).withValues(alpha: 0.4),
+                                              color: const Color(0xFF2563EB).withValues(alpha: 0.4),
                                               blurRadius: 12,
                                               offset: const Offset(0, 4),
                                             ),
@@ -783,7 +783,7 @@ class _ResultPopupState extends State<_ResultPopup>
                                                   const SizedBox(width: 8),
                                                   Text(
                                                     'Spin Again!',
-                                                    style: GoogleFonts.plusJakartaSans(
+                                                    style: GoogleFonts.inter(
                                                       fontSize: 14,
                                                       fontWeight: FontWeight.w700,
                                                       color: Colors.white,
@@ -865,7 +865,7 @@ class _PointerPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
       ..shader = const LinearGradient(
-        colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+        colors: [Color(0xFF2563EB), Color(0xFF1E40AF)],
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
 
     final path = Path()
@@ -875,7 +875,7 @@ class _PointerPainter extends CustomPainter {
       ..close();
 
     // Shadow
-    canvas.drawShadow(path, const Color(0xFF6366F1), 6, true);
+    canvas.drawShadow(path, const Color(0xFF2563EB), 6, true);
     canvas.drawPath(path, paint);
 
     // White outline

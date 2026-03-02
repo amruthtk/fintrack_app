@@ -26,15 +26,17 @@ class ToReceiveScreen extends StatelessWidget {
             for (final m in s.members) {
               if (m.id != userId && m.status != 'paid') {
                 final debtor = provider.getCachedUser(m.id);
-                receivablesByPerson.putIfAbsent(m.id, () => []).add(
-                  SettlementItem(
-                    bill: s,
-                    personName: debtor?.name ?? 'Unknown',
-                    personId: m.id,
-                    amount: m.amount,
-                    type: 'receive',
-                  ),
-                );
+                receivablesByPerson
+                    .putIfAbsent(m.id, () => [])
+                    .add(
+                      SettlementItem(
+                        bill: s,
+                        personName: debtor?.name ?? 'Unknown',
+                        personId: m.id,
+                        amount: m.amount,
+                        type: 'receive',
+                      ),
+                    );
               }
             }
           }
@@ -43,20 +45,27 @@ class ToReceiveScreen extends StatelessWidget {
         final totalReceivable = receivablesByPerson.values
             .expand((v) => v)
             .fold(0.0, (sum, item) => sum + item.amount);
-        final totalBills = receivablesByPerson.values
-            .fold(0, (sum, items) => sum + items.length);
+        final totalBills = receivablesByPerson.values.fold(
+          0,
+          (sum, items) => sum + items.length,
+        );
         final sortedPersonIds = receivablesByPerson.keys.toList()
           ..sort((a, b) {
-            final aTotal =
-                receivablesByPerson[a]!.fold(0.0, (s, i) => s + i.amount);
-            final bTotal =
-                receivablesByPerson[b]!.fold(0.0, (s, i) => s + i.amount);
+            final aTotal = receivablesByPerson[a]!.fold(
+              0.0,
+              (s, i) => s + i.amount,
+            );
+            final bTotal = receivablesByPerson[b]!.fold(
+              0.0,
+              (s, i) => s + i.amount,
+            );
             return bTotal.compareTo(aTotal);
           });
 
         return Scaffold(
-          backgroundColor:
-              isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+          backgroundColor: isDark
+              ? const Color(0xFF0F172A)
+              : const Color(0xFFF8FAFC),
           appBar: AppBar(
             title: const Text(
               'To Receive',
@@ -65,8 +74,7 @@ class ToReceiveScreen extends StatelessWidget {
                 fontStyle: FontStyle.italic,
               ),
             ),
-            backgroundColor:
-                isDark ? const Color(0xFF0F172A) : Colors.white,
+            backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
             elevation: 0,
             scrolledUnderElevation: 0.5,
             foregroundColor: isDark ? Colors.white : const Color(0xFF0F172A),
@@ -88,8 +96,9 @@ class ToReceiveScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF10B981)
-                                .withValues(alpha: 0.3),
+                            color: const Color(
+                              0xFF10B981,
+                            ).withValues(alpha: 0.3),
                             blurRadius: 20,
                             offset: const Offset(0, 8),
                           ),
@@ -121,13 +130,14 @@ class ToReceiveScreen extends StatelessWidget {
                                     style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w500,
-                                      color:
-                                          Colors.white.withValues(alpha: 0.8),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.8,
+                                      ),
                                     ),
                                   ),
                                   Text(
                                     Helpers.formatCurrency(totalReceivable),
-                                    style: GoogleFonts.plusJakartaSans(
+                                    style: GoogleFonts.inter(
                                       fontSize: 28,
                                       fontWeight: FontWeight.w800,
                                       color: Colors.white,
@@ -164,8 +174,10 @@ class ToReceiveScreen extends StatelessWidget {
                     // ── Person Cards ──
                     ...sortedPersonIds.map((personId) {
                       final items = receivablesByPerson[personId]!;
-                      final personTotal =
-                          items.fold(0.0, (s, i) => s + i.amount);
+                      final personTotal = items.fold(
+                        0.0,
+                        (s, i) => s + i.amount,
+                      );
                       final user = provider.getCachedUser(personId);
                       final personName = items.first.personName;
 
@@ -187,44 +199,15 @@ class ToReceiveScreen extends StatelessWidget {
   }
 
   Widget _buildEmpty(bool isDark) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: const Color(0xFF6366F1).withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.account_balance_wallet_rounded,
-              size: 56,
-              color: Color(0xFF6366F1),
-            ),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'Nothing to Collect!',
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-              color: isDark ? Colors.white : const Color(0xFF0F172A),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'No one owes you anything right now.\nAll clear! 🎉',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14,
-              color:
-                  isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
-              height: 1.5,
-            ),
-          ),
-        ],
-      ),
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+      children: [
+        EmptyState(
+          icon: Icons.arrow_downward_rounded,
+          message: 'Nothing to collect.\nNo one owes you anything right now!',
+          isDark: isDark,
+        ),
+      ],
     );
   }
 }
@@ -322,7 +305,7 @@ class _PersonReceiveCardState extends State<_PersonReceiveCard> {
                       children: [
                         Text(
                           widget.personName,
-                          style: GoogleFonts.plusJakartaSans(
+                          style: GoogleFonts.inter(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
                             color: widget.isDark
@@ -348,7 +331,7 @@ class _PersonReceiveCardState extends State<_PersonReceiveCard> {
                     children: [
                       Text(
                         Helpers.formatCurrency(widget.total),
-                        style: GoogleFonts.plusJakartaSans(
+                        style: GoogleFonts.inter(
                           fontSize: 17,
                           fontWeight: FontWeight.w800,
                           color: const Color(0xFF10B981),
@@ -384,21 +367,20 @@ class _PersonReceiveCardState extends State<_PersonReceiveCard> {
                 child: ElevatedButton.icon(
                   onPressed: () {
                     for (final item in widget.items) {
-                      widget.provider
-                          .settleSplit(item.bill.id, item.personId);
+                      widget.provider.settleSplit(item.bill.id, item.personId);
                     }
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(
-                              'Confirmed payment from ${widget.personName}'),
+                            'Confirmed payment from ${widget.personName}',
+                          ),
                           backgroundColor: const Color(0xFF10B981),
                         ),
                       );
                     }
                   },
-                  icon:
-                      const Icon(Icons.check_circle_rounded, size: 16),
+                  icon: const Icon(Icons.check_circle_rounded, size: 16),
                   label: const Text('Confirm All Received'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF10B981),
@@ -419,7 +401,9 @@ class _PersonReceiveCardState extends State<_PersonReceiveCard> {
                   return Container(
                     margin: const EdgeInsets.only(bottom: 6),
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 10),
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       color: widget.isDark
                           ? const Color(0xFF0F172A).withValues(alpha: 0.5)
@@ -431,8 +415,9 @@ class _PersonReceiveCardState extends State<_PersonReceiveCard> {
                         Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF10B981)
-                                .withValues(alpha: 0.1),
+                            color: const Color(
+                              0xFF10B981,
+                            ).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Icon(
@@ -473,7 +458,7 @@ class _PersonReceiveCardState extends State<_PersonReceiveCard> {
                           children: [
                             Text(
                               Helpers.formatCurrency(item.amount),
-                              style: GoogleFonts.plusJakartaSans(
+                              style: GoogleFonts.inter(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
                                 color: const Color(0xFF10B981),
@@ -483,7 +468,9 @@ class _PersonReceiveCardState extends State<_PersonReceiveCard> {
                             GestureDetector(
                               onTap: () {
                                 widget.provider.settleSplit(
-                                    item.bill.id, item.personId);
+                                  item.bill.id,
+                                  item.personId,
+                                );
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
@@ -500,8 +487,9 @@ class _PersonReceiveCardState extends State<_PersonReceiveCard> {
                                   vertical: 3,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF10B981)
-                                      .withValues(alpha: 0.1),
+                                  color: const Color(
+                                    0xFF10B981,
+                                  ).withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: const Text(

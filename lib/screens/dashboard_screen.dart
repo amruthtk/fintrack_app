@@ -40,7 +40,7 @@ class DashboardScreen extends StatelessWidget {
                       Expanded(
                         child: ShaderMask(
                           shaderCallback: (bounds) => const LinearGradient(
-                            colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                            colors: [Color(0xFF2563EB), Color(0xFF1E40AF)],
                           ).createShader(bounds),
                           child: const Text(
                             'FinTrack',
@@ -115,10 +115,10 @@ class DashboardScreen extends StatelessWidget {
                             border: Border.all(
                               color: isDark
                                   ? const Color(
-                                      0xFF6366F1,
+                                      0xFF2563EB,
                                     ).withValues(alpha: 0.5)
                                   : const Color(
-                                      0xFF6366F1,
+                                      0xFF2563EB,
                                     ).withValues(alpha: 0.3),
                               width: 2,
                             ),
@@ -137,7 +137,7 @@ class DashboardScreen extends StatelessWidget {
                                     style: const TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w700,
-                                      color: Color(0xFF6366F1),
+                                      color: Color(0xFF2563EB),
                                     ),
                                   )
                                 : null,
@@ -207,8 +207,7 @@ class DashboardScreen extends StatelessWidget {
                           color: const Color(0xFFF59E0B),
                           isPrivate: isPrivate,
                           isDark: isDark,
-                          onTap: () =>
-                              context.push('/to-pay'),
+                          onTap: () => context.push('/to-pay'),
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -220,14 +219,11 @@ class DashboardScreen extends StatelessWidget {
                           color: const Color(0xFF10B981),
                           isPrivate: isPrivate,
                           isDark: isDark,
-                          onTap: () =>
-                              context.push('/to-receive'),
+                          onTap: () => context.push('/to-receive'),
                         ),
                       ),
                     ],
                   ),
-
-                  const SizedBox(height: 24),
 
                   const SizedBox(height: 24),
 
@@ -279,14 +275,14 @@ class _BalanceCard extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+          colors: [Color(0xFF2563EB), Color(0xFF1E40AF)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF6366F1).withValues(alpha: 0.3),
+            color: const Color(0xFF2563EB).withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -372,7 +368,7 @@ class _BalanceCard extends StatelessWidget {
                     'Credit',
                     creditBalance!,
                     Icons.credit_card_rounded,
-                    const Color(0xFF8B5CF6),
+                    const Color(0xFF1E40AF),
                     onTap: () => context.push('/transactions?wallet=Credit'),
                   ),
                 ],
@@ -518,47 +514,45 @@ class _QuickActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          'Quick Actions',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            color: isDark ? Colors.white : const Color(0xFF0F172A),
-          ),
+        _ActionCircle(
+          icon: Icons.qr_code_scanner_rounded,
+          label: 'Scan QR',
+          onTap: () => context.push('/scan'),
+          isDark: isDark,
         ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            _ActionChip(
-              icon: Icons.handshake_rounded,
-              label: 'Settlements',
-              onTap: () => context.push('/settlements'),
-              isDark: isDark,
-            ),
-            const SizedBox(width: 10),
-            _ActionChip(
-              icon: Icons.savings_rounded,
-              label: 'Pools',
-              onTap: () => context.push('/pools'),
-              isDark: isDark,
-            ),
-          ],
+        _ActionCircle(
+          icon: Icons.handshake_rounded,
+          label: 'Settlements',
+          onTap: () => context.push('/settlements'),
+          isDark: isDark,
+        ),
+        _ActionCircle(
+          icon: Icons.savings_rounded,
+          label: 'Pools',
+          onTap: () => context.push('/pools'),
+          isDark: isDark,
+        ),
+        _ActionCircle(
+          icon: Icons.send_rounded,
+          label: 'QuickPay',
+          onTap: () => context.push('/quick-send'),
+          isDark: isDark,
         ),
       ],
     );
   }
 }
 
-class _ActionChip extends StatelessWidget {
+class _ActionCircle extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
   final bool isDark;
 
-  const _ActionChip({
+  const _ActionCircle({
     required this.icon,
     required this.label,
     required this.onTap,
@@ -567,30 +561,39 @@ class _ActionChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Material(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(14),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            child: Column(
-              children: [
-                Icon(icon, color: const Color(0xFF6366F1), size: 22),
-                const SizedBox(height: 6),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: isDark ? Colors.white : const Color(0xFF334155),
+    return GestureDetector(
+      onTap: onTap,
+      child: SizedBox(
+        width: 72,
+        child: Column(
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: const Color(0xFF2563EB),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF2563EB).withValues(alpha: 0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
                   ),
-                ),
-              ],
+                ],
+              ),
+              child: Icon(icon, color: Colors.white, size: 24),
             ),
-          ),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: isDark ? Colors.white : const Color(0xFF1A1C3D),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -638,7 +641,7 @@ class _RecentActivity extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF6366F1),
+                  color: Color(0xFF2563EB),
                 ),
               ),
             ),
@@ -706,7 +709,7 @@ class _TransactionTile extends StatelessWidget {
       case 'income':
         return const Color(0xFF10B981);
       case 'split':
-        return const Color(0xFF6366F1);
+        return const Color(0xFF2563EB);
       default:
         return const Color(0xFFF43F5E);
     }

@@ -24,20 +24,21 @@ class ToPayScreen extends StatelessWidget {
         final Map<String, List<SettlementItem>> payablesByPerson = {};
         for (final s in splits) {
           if (s.payerId != userId) {
-            final myEntry =
-                s.members.where((m) => m.id == userId).firstOrNull;
+            final myEntry = s.members.where((m) => m.id == userId).firstOrNull;
             if (myEntry != null && myEntry.status != 'paid') {
               final payerId = s.payerId ?? '';
               final payer = provider.getCachedUser(payerId);
-              payablesByPerson.putIfAbsent(payerId, () => []).add(
-                SettlementItem(
-                  bill: s,
-                  personName: payer?.name ?? 'Unknown',
-                  personId: payerId,
-                  amount: myEntry.amount,
-                  type: 'pay',
-                ),
-              );
+              payablesByPerson
+                  .putIfAbsent(payerId, () => [])
+                  .add(
+                    SettlementItem(
+                      bill: s,
+                      personName: payer?.name ?? 'Unknown',
+                      personId: payerId,
+                      amount: myEntry.amount,
+                      type: 'pay',
+                    ),
+                  );
             }
           }
         }
@@ -45,20 +46,27 @@ class ToPayScreen extends StatelessWidget {
         final totalPayable = payablesByPerson.values
             .expand((v) => v)
             .fold(0.0, (sum, item) => sum + item.amount);
-        final totalBills = payablesByPerson.values
-            .fold(0, (sum, items) => sum + items.length);
+        final totalBills = payablesByPerson.values.fold(
+          0,
+          (sum, items) => sum + items.length,
+        );
         final sortedPersonIds = payablesByPerson.keys.toList()
           ..sort((a, b) {
-            final aTotal =
-                payablesByPerson[a]!.fold(0.0, (s, i) => s + i.amount);
-            final bTotal =
-                payablesByPerson[b]!.fold(0.0, (s, i) => s + i.amount);
+            final aTotal = payablesByPerson[a]!.fold(
+              0.0,
+              (s, i) => s + i.amount,
+            );
+            final bTotal = payablesByPerson[b]!.fold(
+              0.0,
+              (s, i) => s + i.amount,
+            );
             return bTotal.compareTo(aTotal);
           });
 
         return Scaffold(
-          backgroundColor:
-              isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+          backgroundColor: isDark
+              ? const Color(0xFF0F172A)
+              : const Color(0xFFF8FAFC),
           appBar: AppBar(
             title: const Text(
               'To Pay',
@@ -67,8 +75,7 @@ class ToPayScreen extends StatelessWidget {
                 fontStyle: FontStyle.italic,
               ),
             ),
-            backgroundColor:
-                isDark ? const Color(0xFF0F172A) : Colors.white,
+            backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
             elevation: 0,
             scrolledUnderElevation: 0.5,
             foregroundColor: isDark ? Colors.white : const Color(0xFF0F172A),
@@ -90,8 +97,9 @@ class ToPayScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFFF59E0B)
-                                .withValues(alpha: 0.3),
+                            color: const Color(
+                              0xFFF59E0B,
+                            ).withValues(alpha: 0.3),
                             blurRadius: 20,
                             offset: const Offset(0, 8),
                           ),
@@ -123,13 +131,14 @@ class ToPayScreen extends StatelessWidget {
                                     style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w500,
-                                      color:
-                                          Colors.white.withValues(alpha: 0.8),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.8,
+                                      ),
                                     ),
                                   ),
                                   Text(
                                     Helpers.formatCurrency(totalPayable),
-                                    style: GoogleFonts.plusJakartaSans(
+                                    style: GoogleFonts.inter(
                                       fontSize: 28,
                                       fontWeight: FontWeight.w800,
                                       color: Colors.white,
@@ -166,8 +175,10 @@ class ToPayScreen extends StatelessWidget {
                     // ── Person Cards ──
                     ...sortedPersonIds.map((personId) {
                       final items = payablesByPerson[personId]!;
-                      final personTotal =
-                          items.fold(0.0, (s, i) => s + i.amount);
+                      final personTotal = items.fold(
+                        0.0,
+                        (s, i) => s + i.amount,
+                      );
                       final user = provider.getCachedUser(personId);
                       final personName = items.first.personName;
 
@@ -189,44 +200,15 @@ class ToPayScreen extends StatelessWidget {
   }
 
   Widget _buildEmpty(bool isDark) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: const Color(0xFF10B981).withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.celebration_rounded,
-              size: 56,
-              color: Color(0xFF10B981),
-            ),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'Nothing to Pay!',
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-              color: isDark ? Colors.white : const Color(0xFF0F172A),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'You don\'t owe anyone right now.\nAll clear! 🎉',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14,
-              color:
-                  isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
-              height: 1.5,
-            ),
-          ),
-        ],
-      ),
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+      children: [
+        EmptyState(
+          icon: Icons.arrow_upward_rounded,
+          message: 'Nothing to pay.\nYou don\'t owe anyone right now!',
+          isDark: isDark,
+        ),
+      ],
     );
   }
 }
@@ -324,7 +306,7 @@ class _PersonPayCardState extends State<_PersonPayCard> {
                       children: [
                         Text(
                           widget.personName,
-                          style: GoogleFonts.plusJakartaSans(
+                          style: GoogleFonts.inter(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
                             color: widget.isDark
@@ -350,7 +332,7 @@ class _PersonPayCardState extends State<_PersonPayCard> {
                     children: [
                       Text(
                         Helpers.formatCurrency(widget.total),
-                        style: GoogleFonts.plusJakartaSans(
+                        style: GoogleFonts.inter(
                           fontSize: 17,
                           fontWeight: FontWeight.w800,
                           color: const Color(0xFFF59E0B),
@@ -396,7 +378,8 @@ class _PersonPayCardState extends State<_PersonPayCard> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
-                                  'Settlement request sent to ${widget.personName}'),
+                                'Settlement request sent to ${widget.personName}',
+                              ),
                               backgroundColor: const Color(0xFF10B981),
                             ),
                           );
@@ -421,7 +404,7 @@ class _PersonPayCardState extends State<_PersonPayCard> {
                       icon: const Icon(Icons.payment_rounded, size: 16),
                       label: const Text('Pay UPI'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF6366F1),
+                        backgroundColor: const Color(0xFF2563EB),
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -441,7 +424,9 @@ class _PersonPayCardState extends State<_PersonPayCard> {
                   return Container(
                     margin: const EdgeInsets.only(bottom: 6),
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 10),
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       color: widget.isDark
                           ? const Color(0xFF0F172A).withValues(alpha: 0.5)
@@ -453,8 +438,9 @@ class _PersonPayCardState extends State<_PersonPayCard> {
                         Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF59E0B)
-                                .withValues(alpha: 0.1),
+                            color: const Color(
+                              0xFFF59E0B,
+                            ).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Icon(
@@ -492,7 +478,7 @@ class _PersonPayCardState extends State<_PersonPayCard> {
                         ),
                         Text(
                           Helpers.formatCurrency(item.amount),
-                          style: GoogleFonts.plusJakartaSans(
+                          style: GoogleFonts.inter(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
                             color: const Color(0xFFF59E0B),
@@ -517,7 +503,8 @@ class _PersonPayCardState extends State<_PersonPayCard> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-              "${payer?.name ?? 'This user'} hasn't set up their UPI ID yet"),
+            "${payer?.name ?? 'This user'} hasn't set up their UPI ID yet",
+          ),
           backgroundColor: const Color(0xFFF59E0B),
         ),
       );

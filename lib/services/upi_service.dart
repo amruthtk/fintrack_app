@@ -15,10 +15,16 @@ class UpiService {
       'cu': 'INR',
       if (note != null && note.isNotEmpty) 'tn': note,
     };
-    final queryStr = params.entries
-        .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
-        .join('&');
-    return 'upi://pay?$queryStr';
+    // Don't URI-encode 'am' and 'cu' — encoding the decimal (5.00 → 5%2E00)
+    // causes some UPI apps to misread the amount.
+    final queryParts = <String>[];
+    for (final e in params.entries) {
+      final val = (e.key == 'am' || e.key == 'cu')
+          ? e.value
+          : Uri.encodeComponent(e.value);
+      queryParts.add('${e.key}=$val');
+    }
+    return 'upi://pay?${queryParts.join('&')}';
   }
 
   /// Launch UPI app with payment URL

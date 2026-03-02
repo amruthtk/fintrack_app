@@ -7,7 +7,12 @@ import '../utils/helpers.dart';
 
 class AddBillScreen extends StatefulWidget {
   final String initialType;
-  const AddBillScreen({super.key, this.initialType = 'expense'});
+  final bool lockType;
+  const AddBillScreen({
+    super.key,
+    this.initialType = 'expense',
+    this.lockType = false,
+  });
 
   @override
   State<AddBillScreen> createState() => _AddBillScreenState();
@@ -319,31 +324,32 @@ class _AddBillScreenState extends State<AddBillScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             children: [
               // Type Switch
-              Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? const Color(0xFF1E293B)
-                      : const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(16),
+              if (!widget.lockType)
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? const Color(0xFF1E293B)
+                        : const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    children: [
+                      _TypeButton(
+                        label: 'Expense',
+                        active: !isIncome,
+                        color: const Color(0xFFF43F5E),
+                        onTap: () => setState(() => _type = 'expense'),
+                      ),
+                      _TypeButton(
+                        label: 'Income',
+                        active: isIncome,
+                        color: const Color(0xFF10B981),
+                        onTap: () => setState(() => _type = 'income'),
+                      ),
+                    ],
+                  ),
                 ),
-                child: Row(
-                  children: [
-                    _TypeButton(
-                      label: 'Expense',
-                      active: !isIncome,
-                      color: const Color(0xFFF43F5E),
-                      onTap: () => setState(() => _type = 'expense'),
-                    ),
-                    _TypeButton(
-                      label: 'Income',
-                      active: isIncome,
-                      color: const Color(0xFF10B981),
-                      onTap: () => setState(() => _type = 'income'),
-                    ),
-                  ],
-                ),
-              ),
 
               const SizedBox(height: 32),
 
@@ -466,7 +472,7 @@ class _AddBillScreenState extends State<AddBillScreen> {
                       ),
                       decoration: BoxDecoration(
                         color: _showCalculator
-                            ? const Color(0xFF6366F1)
+                            ? const Color(0xFF2563EB)
                             : (isDark
                                   ? const Color(0xFF1E293B)
                                   : const Color(0xFFF1F5F9)),
@@ -511,7 +517,7 @@ class _AddBillScreenState extends State<AddBillScreen> {
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF6366F1).withValues(alpha: 0.1),
+                        color: const Color(0xFF2563EB).withValues(alpha: 0.1),
                         blurRadius: 20,
                       ),
                     ],
@@ -596,7 +602,7 @@ class _AddBillScreenState extends State<AddBillScreen> {
                                 child: Container(
                                   decoration: BoxDecoration(
                                     color: isOp
-                                        ? const Color(0xFF6366F1)
+                                        ? const Color(0xFF2563EB)
                                         : (isDark
                                               ? const Color(0xFF0F172A)
                                               : const Color(0xFFF1F5F9)),
@@ -736,95 +742,100 @@ class _AddBillScreenState extends State<AddBillScreen> {
                     color: isDark ? const Color(0xFF1E293B) : Colors.white,
                     borderRadius: BorderRadius.circular(16),
                   ),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.repeat_rounded,
-                              size: 18,
-                              color: _isRecurring
-                                  ? const Color(0xFF6366F1)
-                                  : (isDark ? Colors.white38 : Colors.black38),
-                            ),
-                            const SizedBox(width: 10),
-                            Text(
-                              'Recurring Expense',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: isDark
-                                    ? Colors.white
-                                    : const Color(0xFF0F172A),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.repeat_rounded,
+                                size: 18,
+                                color: _isRecurring
+                                    ? const Color(0xFF2563EB)
+                                    : (isDark
+                                          ? Colors.white38
+                                          : Colors.black38),
                               ),
-                            ),
-                          ],
-                        ),
-                        Switch.adaptive(
-                          value: _isRecurring,
-                          onChanged: (v) => setState(() => _isRecurring = v),
-                          activeTrackColor: const Color(0xFF6366F1),
-                        ),
-                      ],
-                    ),
-                    if (_isRecurring) ...[
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        height: 36,
-                        child: ListView(
-                          scrollDirection: Axis.horizontal,
-                          children:
-                              [
-                                'Daily',
-                                'Weekly',
-                                'Monthly',
-                                'Quarterly',
-                                'Yearly',
-                              ].map((f) {
-                                final active = _recurringFrequency == f;
-                                return Padding(
-                                  padding: const EdgeInsets.only(right: 8),
-                                  child: GestureDetector(
-                                    onTap: () =>
-                                        setState(() => _recurringFrequency = f),
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 14,
-                                        vertical: 8,
+                              const SizedBox(width: 10),
+                              Text(
+                                'Recurring Expense',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark
+                                      ? Colors.white
+                                      : const Color(0xFF0F172A),
+                                ),
+                              ),
+                            ],
+                          ),
+                          Switch.adaptive(
+                            value: _isRecurring,
+                            onChanged: (v) => setState(() => _isRecurring = v),
+                            activeTrackColor: const Color(0xFF2563EB),
+                          ),
+                        ],
+                      ),
+                      if (_isRecurring) ...[
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          height: 36,
+                          child: ListView(
+                            scrollDirection: Axis.horizontal,
+                            children:
+                                [
+                                  'Daily',
+                                  'Weekly',
+                                  'Monthly',
+                                  'Quarterly',
+                                  'Yearly',
+                                ].map((f) {
+                                  final active = _recurringFrequency == f;
+                                  return Padding(
+                                    padding: const EdgeInsets.only(right: 8),
+                                    child: GestureDetector(
+                                      onTap: () => setState(
+                                        () => _recurringFrequency = f,
                                       ),
-                                      decoration: BoxDecoration(
-                                        color: active
-                                            ? const Color(0xFF6366F1)
-                                            : (isDark
-                                                  ? const Color(0xFF0F172A)
-                                                  : const Color(0xFFF1F5F9)),
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                      child: Text(
-                                        f,
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w700,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 14,
+                                          vertical: 8,
+                                        ),
+                                        decoration: BoxDecoration(
                                           color: active
-                                              ? Colors.white
+                                              ? const Color(0xFF2563EB)
                                               : (isDark
-                                                    ? Colors.white54
-                                                    : Colors.black54),
+                                                    ? const Color(0xFF0F172A)
+                                                    : const Color(0xFFF1F5F9)),
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          f,
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w700,
+                                            color: active
+                                                ? Colors.white
+                                                : (isDark
+                                                      ? Colors.white54
+                                                      : Colors.black54),
+                                          ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                                );
-                              }).toList(),
+                                  );
+                                }).toList(),
+                          ),
                         ),
-                      ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
 
               const SizedBox(height: 32),
 

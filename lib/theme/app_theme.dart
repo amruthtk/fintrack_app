@@ -3,12 +3,12 @@ import 'package:google_fonts/google_fonts.dart';
 
 class AppColors {
   // Primary palette
-  static const primary = Color(0xFF6366F1); // Indigo
-  static const primaryDark = Color(0xFF4F46E5);
-  static const primaryLight = Color(0xFF818CF8);
+  static const primary = Color(0xFF2563EB); // Blue
+  static const primaryDark = Color(0xFF1D4ED8);
+  static const primaryLight = Color(0xFF3B82F6);
 
   // Accent
-  static const accent = Color(0xFF8B5CF6); // Violet
+  static const accent = Color(0xFF1E40AF); // Blue-deep
   static const emerald = Color(0xFF10B981);
   static const rose = Color(0xFFF43F5E);
   static const amber = Color(0xFFF59E0B);
@@ -16,9 +16,9 @@ class AppColors {
   static const orange = Color(0xFFF97316);
 
   // Surfaces — Light
-  static const surfaceLight = Color(0xFFF8FAFC);
+  static const surfaceLight = Color(0xFFF9FAFB);
   static const cardLight = Colors.white;
-  static const textPrimaryLight = Color(0xFF0F172A);
+  static const textPrimaryLight = Color(0xFF1A1C3D);
   static const textSecondaryLight = Color(0xFF64748B);
 
   // Surfaces — Dark
@@ -30,7 +30,7 @@ class AppColors {
 
   // Category colors
   static const categoryColors = [
-    Color(0xFF4F46E5),
+    Color(0xFF1D4ED8),
     Color(0xFF7C3AED),
     Color(0xFFEC4899),
     Color(0xFFF43F5E),
@@ -69,7 +69,7 @@ class AppTheme {
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: false,
-        titleTextStyle: GoogleFonts.outfit(
+        titleTextStyle: GoogleFonts.inter(
           fontSize: 20,
           fontWeight: FontWeight.w600,
           color: AppColors.textPrimaryLight,
@@ -134,7 +134,7 @@ class AppTheme {
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: false,
-        titleTextStyle: GoogleFonts.outfit(
+        titleTextStyle: GoogleFonts.inter(
           fontSize: 20,
           fontWeight: FontWeight.w600,
           color: AppColors.textPrimaryDark,

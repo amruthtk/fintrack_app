@@ -39,32 +39,35 @@ class _SettlementsScreenState extends State<SettlementsScreen> {
             for (final m in s.members) {
               if (m.id != userId && m.status != 'paid') {
                 final debtor = provider.getCachedUser(m.id);
-                theyOweMe.putIfAbsent(m.id, () => []).add(
-                  SettlementItem(
-                    bill: s,
-                    personName: debtor?.name ?? 'Unknown',
-                    personId: m.id,
-                    amount: m.amount,
-                    type: 'receive',
-                  ),
-                );
+                theyOweMe
+                    .putIfAbsent(m.id, () => [])
+                    .add(
+                      SettlementItem(
+                        bill: s,
+                        personName: debtor?.name ?? 'Unknown',
+                        personId: m.id,
+                        amount: m.amount,
+                        type: 'receive',
+                      ),
+                    );
               }
             }
           } else {
-            final myEntry =
-                s.members.where((m) => m.id == userId).firstOrNull;
+            final myEntry = s.members.where((m) => m.id == userId).firstOrNull;
             if (myEntry != null && myEntry.status != 'paid') {
               final payerId = s.payerId ?? '';
               final payer = provider.getCachedUser(payerId);
-              iOweThem.putIfAbsent(payerId, () => []).add(
-                SettlementItem(
-                  bill: s,
-                  personName: payer?.name ?? 'Unknown',
-                  personId: payerId,
-                  amount: myEntry.amount,
-                  type: 'pay',
-                ),
-              );
+              iOweThem
+                  .putIfAbsent(payerId, () => [])
+                  .add(
+                    SettlementItem(
+                      bill: s,
+                      personName: payer?.name ?? 'Unknown',
+                      personId: payerId,
+                      amount: myEntry.amount,
+                      type: 'pay',
+                    ),
+                  );
             }
           }
         }
@@ -97,12 +100,12 @@ class _SettlementsScreenState extends State<SettlementsScreen> {
             return bT.compareTo(aT);
           });
 
-        final isEmpty =
-            sortedReceivableIds.isEmpty && sortedPayableIds.isEmpty;
+        final isEmpty = sortedReceivableIds.isEmpty && sortedPayableIds.isEmpty;
 
         return Scaffold(
-          backgroundColor:
-              isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+          backgroundColor: isDark
+              ? const Color(0xFF0F172A)
+              : const Color(0xFFF8FAFC),
           appBar: AppBar(
             title: const Text(
               'Settlements',
@@ -111,8 +114,7 @@ class _SettlementsScreenState extends State<SettlementsScreen> {
                 fontStyle: FontStyle.italic,
               ),
             ),
-            backgroundColor:
-                isDark ? const Color(0xFF0F172A) : Colors.white,
+            backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
             elevation: 0,
             scrolledUnderElevation: 0.5,
             foregroundColor: isDark ? Colors.white : const Color(0xFF0F172A),
@@ -123,8 +125,7 @@ class _SettlementsScreenState extends State<SettlementsScreen> {
                   padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
                   children: [
                     // ── Summary Card ──
-                    _buildSummaryCard(
-                        isDark, totalReceivable, totalPayable),
+                    _buildSummaryCard(isDark, totalReceivable, totalPayable),
                     const SizedBox(height: 24),
 
                     // ── SECTION: They Owe You ──
@@ -140,8 +141,7 @@ class _SettlementsScreenState extends State<SettlementsScreen> {
                       const SizedBox(height: 10),
                       ...sortedReceivableIds.map((personId) {
                         final items = theyOweMe[personId]!;
-                        final total =
-                            items.fold(0.0, (s, i) => s + i.amount);
+                        final total = items.fold(0.0, (s, i) => s + i.amount);
                         final user = provider.getCachedUser(personId);
                         return _PersonCard(
                           personId: personId,
@@ -151,8 +151,7 @@ class _SettlementsScreenState extends State<SettlementsScreen> {
                           total: total,
                           isDark: isDark,
                           isOweMe: true,
-                          isExpanded:
-                              _expandedPersons.contains('r_$personId'),
+                          isExpanded: _expandedPersons.contains('r_$personId'),
                           onToggle: () {
                             setState(() {
                               final key = 'r_$personId';
@@ -182,8 +181,7 @@ class _SettlementsScreenState extends State<SettlementsScreen> {
                       const SizedBox(height: 10),
                       ...sortedPayableIds.map((personId) {
                         final items = iOweThem[personId]!;
-                        final total =
-                            items.fold(0.0, (s, i) => s + i.amount);
+                        final total = items.fold(0.0, (s, i) => s + i.amount);
                         final user = provider.getCachedUser(personId);
                         return _PersonCard(
                           personId: personId,
@@ -193,8 +191,7 @@ class _SettlementsScreenState extends State<SettlementsScreen> {
                           total: total,
                           isDark: isDark,
                           isOweMe: false,
-                          isExpanded:
-                              _expandedPersons.contains('p_$personId'),
+                          isExpanded: _expandedPersons.contains('p_$personId'),
                           onToggle: () {
                             setState(() {
                               final key = 'p_$personId';
@@ -217,45 +214,15 @@ class _SettlementsScreenState extends State<SettlementsScreen> {
   }
 
   Widget _buildEmptyState(bool isDark) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: const Color(0xFF10B981).withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.celebration_rounded,
-              size: 56,
-              color: Color(0xFF10B981),
-            ),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'All Settled Up!',
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-              color: isDark ? Colors.white : const Color(0xFF0F172A),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'No pending settlements.\nYou\'re all clear! 🎉',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14,
-              color: isDark
-                  ? const Color(0xFF64748B)
-                  : const Color(0xFF94A3B8),
-              height: 1.5,
-            ),
-          ),
-        ],
-      ),
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+      children: [
+        EmptyState(
+          icon: Icons.handshake_rounded,
+          message: 'No pending settlements.\nYou\'re all clear!',
+          isDark: isDark,
+        ),
+      ],
     );
   }
 
@@ -275,13 +242,14 @@ class _SettlementsScreenState extends State<SettlementsScreen> {
           end: Alignment.bottomRight,
           colors: isDark
               ? [const Color(0xFF1E293B), const Color(0xFF334155)]
-              : [const Color(0xFF6366F1), const Color(0xFF8B5CF6)],
+              : [const Color(0xFF2563EB), const Color(0xFF1E40AF)],
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF6366F1)
-                .withValues(alpha: isDark ? 0.1 : 0.3),
+            color: const Color(
+              0xFF2563EB,
+            ).withValues(alpha: isDark ? 0.1 : 0.3),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -311,7 +279,7 @@ class _SettlementsScreenState extends State<SettlementsScreen> {
               const SizedBox(width: 8),
               Text(
                 '${isPositive ? '+' : '-'}${Helpers.formatCurrency(netBalance.abs())}',
-                style: GoogleFonts.plusJakartaSans(
+                style: GoogleFonts.inter(
                   fontSize: 28,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
@@ -322,9 +290,7 @@ class _SettlementsScreenState extends State<SettlementsScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            isPositive
-                ? 'Overall, people owe you'
-                : 'Overall, you owe others',
+            isPositive ? 'Overall, people owe you' : 'Overall, you owe others',
             style: TextStyle(
               fontSize: 12,
               color: Colors.white.withValues(alpha: 0.6),
@@ -378,7 +344,7 @@ class _SettlementsScreenState extends State<SettlementsScreen> {
         const SizedBox(width: 10),
         Text(
           title,
-          style: GoogleFonts.plusJakartaSans(
+          style: GoogleFonts.inter(
             fontSize: 16,
             fontWeight: FontWeight.w700,
             color: isDark ? Colors.white : const Color(0xFF0F172A),
@@ -403,7 +369,7 @@ class _SettlementsScreenState extends State<SettlementsScreen> {
         const Spacer(),
         Text(
           Helpers.formatCurrency(total),
-          style: GoogleFonts.plusJakartaSans(
+          style: GoogleFonts.inter(
             fontSize: 15,
             fontWeight: FontWeight.w800,
             color: color,
@@ -442,8 +408,9 @@ class _PersonCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accentColor =
-        isOweMe ? const Color(0xFF10B981) : const Color(0xFFF59E0B);
+    final accentColor = isOweMe
+        ? const Color(0xFF10B981)
+        : const Color(0xFFF59E0B);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -455,10 +422,7 @@ class _PersonCard extends StatelessWidget {
           width: 1,
         ),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 8,
-          ),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8),
         ],
       ),
       child: Column(
@@ -481,10 +445,7 @@ class _PersonCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: isOweMe
-                            ? [
-                                const Color(0xFF10B981),
-                                const Color(0xFF059669),
-                              ]
+                            ? [const Color(0xFF10B981), const Color(0xFF059669)]
                             : [
                                 const Color(0xFFF59E0B),
                                 const Color(0xFFD97706),
@@ -518,7 +479,7 @@ class _PersonCard extends StatelessWidget {
                       children: [
                         Text(
                           personName,
-                          style: GoogleFonts.plusJakartaSans(
+                          style: GoogleFonts.inter(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
                             color: isDark
@@ -541,7 +502,7 @@ class _PersonCard extends StatelessWidget {
                   ),
                   Text(
                     Helpers.formatCurrency(total),
-                    style: GoogleFonts.plusJakartaSans(
+                    style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w800,
                       color: accentColor,
@@ -566,8 +527,7 @@ class _PersonCard extends StatelessWidget {
           if (isExpanded) ...[
             Container(
               height: 1,
-              color:
-                  isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
+              color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
             ),
 
             // Action buttons
@@ -579,21 +539,20 @@ class _PersonCard extends StatelessWidget {
                       child: ElevatedButton.icon(
                         onPressed: () {
                           for (final item in items) {
-                            provider.settleSplit(
-                                item.bill.id, item.personId);
+                            provider.settleSplit(item.bill.id, item.personId);
                           }
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(
-                                    'Confirmed payment from $personName'),
+                                  'Confirmed payment from $personName',
+                                ),
                                 backgroundColor: const Color(0xFF10B981),
                               ),
                             );
                           }
                         },
-                        icon: const Icon(
-                            Icons.check_circle_rounded, size: 16),
+                        icon: const Icon(Icons.check_circle_rounded, size: 16),
                         label: const Text('Confirm All Received'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF10B981),
@@ -601,8 +560,7 @@ class _PersonCard extends StatelessWidget {
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          padding:
-                              const EdgeInsets.symmetric(vertical: 10),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
                         ),
                       ),
                     )
@@ -621,44 +579,38 @@ class _PersonCard extends StatelessWidget {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text(
-                                        'Settlement request sent to $personName'),
-                                    backgroundColor:
-                                        const Color(0xFF10B981),
+                                      'Settlement request sent to $personName',
+                                    ),
+                                    backgroundColor: const Color(0xFF10B981),
                                   ),
                                 );
                               }
                             },
-                            icon:
-                                const Icon(Icons.check_rounded, size: 16),
+                            icon: const Icon(Icons.check_rounded, size: 16),
                             label: const Text('Mark Paid'),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: const Color(0xFF10B981),
-                              side: const BorderSide(
-                                  color: Color(0xFF10B981)),
+                              side: const BorderSide(color: Color(0xFF10B981)),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              padding: const EdgeInsets.symmetric(
-                                  vertical: 10),
+                              padding: const EdgeInsets.symmetric(vertical: 10),
                             ),
                           ),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
                           child: ElevatedButton.icon(
-                            onPressed: () =>
-                                _handlePay(context, provider),
-                            icon: const Icon(
-                                Icons.payment_rounded, size: 16),
+                            onPressed: () => _handlePay(context, provider),
+                            icon: const Icon(Icons.payment_rounded, size: 16),
                             label: const Text('Pay UPI'),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF6366F1),
+                              backgroundColor: const Color(0xFF2563EB),
                               foregroundColor: Colors.white,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              padding: const EdgeInsets.symmetric(
-                                  vertical: 10),
+                              padding: const EdgeInsets.symmetric(vertical: 10),
                             ),
                           ),
                         ),
@@ -674,7 +626,9 @@ class _PersonCard extends StatelessWidget {
                   return Container(
                     margin: const EdgeInsets.only(bottom: 6),
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 10),
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       color: isDark
                           ? const Color(0xFF0F172A).withValues(alpha: 0.5)
@@ -737,7 +691,8 @@ class _PersonCard extends StatelessWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-              "${payer?.name ?? 'This user'} hasn't set up their UPI ID yet"),
+            "${payer?.name ?? 'This user'} hasn't set up their UPI ID yet",
+          ),
           backgroundColor: const Color(0xFFF59E0B),
         ),
       );

@@ -95,7 +95,7 @@ class _SplashScreenState extends State<SplashScreen>
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF6366F1).withValues(alpha: 0.4),
+                        color: const Color(0xFF2563EB).withValues(alpha: 0.4),
                         blurRadius: 40,
                         offset: const Offset(0, 12),
                       ),
@@ -103,7 +103,7 @@ class _SplashScreenState extends State<SplashScreen>
                   ),
                   child: const Icon(
                     Icons.bolt_rounded,
-                    color: Color(0xFF6366F1),
+                    color: Color(0xFF2563EB),
                     size: 44,
                   ),
                 ),
@@ -155,7 +155,7 @@ class _SplashScreenState extends State<SplashScreen>
                                     shape: BoxShape.circle,
                                     boxShadow: [
                                       BoxShadow(
-                                        color: const Color(0xFF6366F1).withValues(alpha: 0.5),
+                                        color: const Color(0xFF2563EB).withValues(alpha: 0.5),
                                         blurRadius: 6,
                                       ),
                                     ],

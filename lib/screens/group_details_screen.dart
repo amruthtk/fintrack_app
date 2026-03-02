@@ -22,7 +22,9 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = context.read<AppProvider>();
-      final group = provider.groups.where((g) => g.id == widget.groupId).firstOrNull;
+      final group = provider.groups
+          .where((g) => g.id == widget.groupId)
+          .firstOrNull;
       if (group != null) {
         provider.fetchUsersByIds(group.memberIds);
       }
@@ -35,17 +37,23 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
 
     return Consumer<AppProvider>(
       builder: (context, provider, _) {
-        final group = provider.groups.where((g) => g.id == widget.groupId).firstOrNull;
+        final group = provider.groups
+            .where((g) => g.id == widget.groupId)
+            .firstOrNull;
 
         if (group == null) {
           return Scaffold(
-            backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+            backgroundColor: isDark
+                ? const Color(0xFF0F172A)
+                : const Color(0xFFF8FAFC),
             appBar: AppBar(
               backgroundColor: Colors.transparent,
               leading: IconButton(
                 onPressed: () => context.pop(),
-                icon: Icon(Icons.arrow_back_rounded,
-                    color: isDark ? Colors.white : const Color(0xFF0F172A)),
+                icon: Icon(
+                  Icons.arrow_back_rounded,
+                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                ),
               ),
             ),
             body: const Center(child: Text('Group not found')),
@@ -58,16 +66,18 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
         final groupSplits = provider.transactions
             .where((t) => t.type == 'split' && t.splitType != 'pool')
             .where((t) {
-          // Primary: exact groupId match
-          if (t.groupId == widget.groupId) return true;
-          // Fallback: member overlap for older bills without groupId
-          if (t.groupId == null) {
-            final memberIds = t.members.map((m) => m.id).toSet();
-            return group.memberIds.toSet().containsAll(memberIds) &&
-                memberIds.length > 1;
-          }
-          return false;
-        }).toList();
+              // Primary: exact groupId match
+              if (t.groupId == widget.groupId) return true;
+              // Fallback: member overlap for older bills without groupId
+              if (t.groupId == null) {
+                final memberIds = t.members.map((m) => m.id).toSet();
+                return group.memberIds.toSet().containsAll(memberIds) &&
+                    memberIds.length > 1;
+              }
+              return false;
+            })
+            .toList();
+        groupSplits.sort((a, b) => b.date.compareTo(a.date));
 
         // Compute group totals
         double totalGroupSpent = 0;
@@ -107,650 +117,790 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
         }
 
         return Scaffold(
-          backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
-          body: CustomScrollView(
-            slivers: [
-              // ── App Bar ──
-              SliverAppBar(
-                expandedHeight: 180,
-                pinned: true,
-                backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFF6366F1),
-                leading: IconButton(
-                  onPressed: () => context.pop(),
-                  icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+          backgroundColor: isDark
+              ? const Color(0xFF0F172A)
+              : const Color(0xFFF8FAFC),
+          body: Column(
+            children: [
+              // ── Static Header ──
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.only(
+                  top: MediaQuery.of(context).padding.top,
                 ),
-                actions: [
-                  PopupMenuButton<String>(
-                    icon: const Icon(Icons.more_vert_rounded, color: Colors.white),
-                    color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                    onSelected: (value) {
-                      if (value == 'delete') _confirmDelete(context, provider, group);
-                    },
-                    itemBuilder: (ctx) => [
-                      const PopupMenuItem(
-                        value: 'delete',
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: isDark
+                        ? [const Color(0xFF1E1B4B), const Color(0xFF0F172A)]
+                        : [const Color(0xFF2563EB), const Color(0xFF1E40AF)],
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    // Toolbar
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        IconButton(
+                          onPressed: () => context.pop(),
+                          icon: const Icon(
+                            Icons.arrow_back_rounded,
+                            color: Colors.white,
+                          ),
+                        ),
+                        Row(
+                          children: [
+                            // Roulette Action
+                            IconButton(
+                              onPressed: () {
+                                final memberNames = group.memberIds.map((id) {
+                                  if (id == userId) return 'You';
+                                  final member = provider.getCachedUser(id);
+                                  return member?.name.split(' ').first ??
+                                      'User';
+                                }).toList();
+
+                                if (memberNames.length < 2) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Need at least 2 members to spin!',
+                                      ),
+                                      backgroundColor: Color(0xFFF59E0B),
+                                    ),
+                                  );
+                                  return;
+                                }
+
+                                context.push(
+                                  '/spin-wheel',
+                                  extra: {
+                                    'memberNames': memberNames,
+                                    'groupName': group.name,
+                                  },
+                                );
+                              },
+                              icon: Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.2),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Text(
+                                  '🎰',
+                                  style: TextStyle(fontSize: 16),
+                                ),
+                              ),
+                            ),
+                            PopupMenuButton<String>(
+                              icon: const Icon(
+                                Icons.more_vert_rounded,
+                                color: Colors.white,
+                              ),
+                              color: isDark
+                                  ? const Color(0xFF1E293B)
+                                  : Colors.white,
+                              onSelected: (value) {
+                                if (value == 'delete')
+                                  _confirmDelete(context, provider, group);
+                              },
+                              itemBuilder: (ctx) => [
+                                const PopupMenuItem(
+                                  value: 'delete',
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.delete_rounded,
+                                        size: 18,
+                                        color: Color(0xFFF43F5E),
+                                      ),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        'Delete Group',
+                                        style: TextStyle(
+                                          color: Color(0xFFF43F5E),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+
+                    // Group Info
+                    const SizedBox(height: 10),
+                    Container(
+                          width: 64,
+                          height: 64,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            group.emoji,
+                            style: const TextStyle(fontSize: 32),
+                          ),
+                        )
+                        .animate()
+                        .scale(curve: Curves.easeOutBack, duration: 400.ms)
+                        .fadeIn(),
+
+                    const SizedBox(height: 12),
+                    Text(
+                      group.name,
+                      style: GoogleFonts.inter(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                        letterSpacing: -0.5,
+                      ),
+                    ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2),
+                    Text(
+                      '${group.memberIds.length} members',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.white.withValues(alpha: 0.7),
+                      ),
+                    ).animate().fadeIn(delay: 400.ms),
+                    const SizedBox(height: 24),
+                  ],
+                ),
+              ),
+
+              // ── Scrollable Body ──
+              Expanded(
+                child: CustomScrollView(
+                  slivers: [
+                    // ── Stats Cards ──
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
                         child: Row(
                           children: [
-                            Icon(Icons.delete_rounded, size: 18, color: Color(0xFFF43F5E)),
-                            SizedBox(width: 8),
-                            Text('Delete Group',
-                                style: TextStyle(color: Color(0xFFF43F5E))),
+                            Expanded(
+                              child:
+                                  _InfoCard(
+                                        title: 'Total Spent',
+                                        value: Helpers.formatCurrency(
+                                          totalGroupSpent,
+                                        ),
+                                        icon: Icons.receipt_long_rounded,
+                                        color: const Color(0xFF2563EB),
+                                        isDark: isDark,
+                                      )
+                                      .animate()
+                                      .fadeIn(delay: 400.ms)
+                                      .scale(
+                                        begin: const Offset(0.9, 0.9),
+                                        curve: Curves.easeOutBack,
+                                      ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child:
+                                  _InfoCard(
+                                        title: 'My Share',
+                                        value: Helpers.formatCurrency(myShare),
+                                        icon: Icons.person_rounded,
+                                        color: const Color(0xFFF59E0B),
+                                        isDark: isDark,
+                                      )
+                                      .animate()
+                                      .fadeIn(delay: 500.ms)
+                                      .scale(
+                                        begin: const Offset(0.9, 0.9),
+                                        curve: Curves.easeOutBack,
+                                      ),
+                            ),
                           ],
                         ),
                       ),
-                    ],
-                  ),
-                ],
-                flexibleSpace: FlexibleSpaceBar(
-                  background: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: isDark
-                            ? [const Color(0xFF312E81), const Color(0xFF1E293B)]
-                            : [const Color(0xFF6366F1), const Color(0xFF8B5CF6)],
-                      ),
                     ),
-                    child: SafeArea(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const SizedBox(height: 20),
-                          Container(
-                            width: 64,
-                            height: 64,
+
+                    // ── Settlements Card ──
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                        child: GestureDetector(
+                          onTap: () => context.push('/settlements'),
+                          child: Container(
+                            padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(20),
+                              color: isDark
+                                  ? const Color(0xFF1E293B)
+                                  : Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: const Color(
+                                  0xFF2563EB,
+                                ).withValues(alpha: 0.15),
+                                width: 1,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.03),
+                                  blurRadius: 10,
+                                ),
+                              ],
                             ),
-                            alignment: Alignment.center,
-                            child: Text(group.emoji,
-                                style: const TextStyle(fontSize: 32)),
-                          ).animate().scale(curve: Curves.easeOutBack, duration: 400.ms).fadeIn(),
-                          const SizedBox(height: 12),
-                          Text(
-                            group.name,
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white,
-                              letterSpacing: -0.5,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: const Color(
+                                          0xFF2563EB,
+                                        ).withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: const Icon(
+                                        Icons.handshake_rounded,
+                                        color: Color(0xFF2563EB),
+                                        size: 20,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        'Settlements',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w700,
+                                          color: isDark
+                                              ? Colors.white
+                                              : const Color(0xFF0F172A),
+                                        ),
+                                      ),
+                                    ),
+                                    Icon(
+                                      Icons.arrow_forward_ios_rounded,
+                                      size: 14,
+                                      color: isDark
+                                          ? const Color(0xFF64748B)
+                                          : const Color(0xFF94A3B8),
+                                    ),
+                                  ],
+                                ),
+                                if (groupReceivables > 0 ||
+                                    groupPayables > 0) ...[
+                                  const SizedBox(height: 14),
+                                  Row(
+                                    children: [
+                                      if (groupReceivables > 0)
+                                        Expanded(
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 12,
+                                              vertical: 10,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: const Color(
+                                                0xFF10B981,
+                                              ).withValues(alpha: 0.08),
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                const Icon(
+                                                  Icons.arrow_downward_rounded,
+                                                  color: Color(0xFF10B981),
+                                                  size: 16,
+                                                ),
+                                                const SizedBox(width: 6),
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Text(
+                                                        'To Receive',
+                                                        style: TextStyle(
+                                                          fontSize: 10,
+                                                          fontWeight:
+                                                              FontWeight.w500,
+                                                          color:
+                                                              const Color(
+                                                                0xFF10B981,
+                                                              ).withValues(
+                                                                alpha: 0.8,
+                                                              ),
+                                                        ),
+                                                      ),
+                                                      Text(
+                                                        Helpers.formatCurrency(
+                                                          groupReceivables,
+                                                        ),
+                                                        style: const TextStyle(
+                                                          fontSize: 14,
+                                                          fontWeight:
+                                                              FontWeight.w700,
+                                                          color: Color(
+                                                            0xFF10B981,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                                Container(
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 6,
+                                                        vertical: 2,
+                                                      ),
+                                                  decoration: BoxDecoration(
+                                                    color: const Color(
+                                                      0xFF10B981,
+                                                    ).withValues(alpha: 0.15),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          6,
+                                                        ),
+                                                  ),
+                                                  child: Text(
+                                                    '$receivableCount',
+                                                    style: const TextStyle(
+                                                      fontSize: 10,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                      color: Color(0xFF10B981),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      if (groupReceivables > 0 &&
+                                          groupPayables > 0)
+                                        const SizedBox(width: 10),
+                                      if (groupPayables > 0)
+                                        Expanded(
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 12,
+                                              vertical: 10,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: const Color(
+                                                0xFFF59E0B,
+                                              ).withValues(alpha: 0.08),
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                const Icon(
+                                                  Icons.arrow_upward_rounded,
+                                                  color: Color(0xFFF59E0B),
+                                                  size: 16,
+                                                ),
+                                                const SizedBox(width: 6),
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Text(
+                                                        'To Pay',
+                                                        style: TextStyle(
+                                                          fontSize: 10,
+                                                          fontWeight:
+                                                              FontWeight.w500,
+                                                          color:
+                                                              const Color(
+                                                                0xFFF59E0B,
+                                                              ).withValues(
+                                                                alpha: 0.8,
+                                                              ),
+                                                        ),
+                                                      ),
+                                                      Text(
+                                                        Helpers.formatCurrency(
+                                                          groupPayables,
+                                                        ),
+                                                        style: const TextStyle(
+                                                          fontSize: 14,
+                                                          fontWeight:
+                                                              FontWeight.w700,
+                                                          color: Color(
+                                                            0xFFF59E0B,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                                Container(
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 6,
+                                                        vertical: 2,
+                                                      ),
+                                                  decoration: BoxDecoration(
+                                                    color: const Color(
+                                                      0xFFF59E0B,
+                                                    ).withValues(alpha: 0.15),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          6,
+                                                        ),
+                                                  ),
+                                                  child: Text(
+                                                    '$payableCount',
+                                                    style: const TextStyle(
+                                                      fontSize: 10,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                      color: Color(0xFFF59E0B),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ] else ...[
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.check_circle_rounded,
+                                        color: Color(0xFF10B981),
+                                        size: 16,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        'All settled up! 🎉',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w500,
+                                          color: isDark
+                                              ? const Color(0xFF94A3B8)
+                                              : const Color(0xFF64748B),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ],
                             ),
-                          ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2),
-                          Text(
-                            '${group.memberIds.length} members',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.white.withValues(alpha: 0.7),
-                            ),
-                          ).animate().fadeIn(delay: 400.ms),
-                        ],
+                          ),
+                        ).animate().fadeIn(delay: 550.ms).slideY(begin: 0.1),
                       ),
                     ),
-                  ),
-                ),
-              ),
 
-              // ── Stats Cards ──
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _InfoCard(
-                          title: 'Total Spent',
-                          value: Helpers.formatCurrency(totalGroupSpent),
-                          icon: Icons.receipt_long_rounded,
-                          color: const Color(0xFF6366F1),
-                          isDark: isDark,
-                        ).animate().fadeIn(delay: 400.ms).scale(begin: const Offset(0.9, 0.9), curve: Curves.easeOutBack),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _InfoCard(
-                          title: 'My Share',
-                          value: Helpers.formatCurrency(myShare),
-                          icon: Icons.person_rounded,
-                          color: const Color(0xFFF59E0B),
-                          isDark: isDark,
-                        ).animate().fadeIn(delay: 500.ms).scale(begin: const Offset(0.9, 0.9), curve: Curves.easeOutBack),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              // ── Settlements Card ──
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-                  child: GestureDetector(
-                    onTap: () => context.push('/settlements'),
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: const Color(0xFF6366F1).withValues(alpha: 0.15),
-                          width: 1,
+                    // ── Members Section ──
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+                        child: Text(
+                          'Members',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xFF0F172A),
+                          ),
                         ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.03),
-                            blurRadius: 10,
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF6366F1).withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: const Icon(
-                                  Icons.handshake_rounded,
-                                  color: Color(0xFF6366F1),
-                                  size: 20,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  'Settlements',
-                                  style: GoogleFonts.plusJakartaSans(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w700,
-                                    color: isDark ? Colors.white : const Color(0xFF0F172A),
-                                  ),
-                                ),
-                              ),
-                              Icon(
-                                Icons.arrow_forward_ios_rounded,
-                                size: 14,
-                                color: isDark
-                                    ? const Color(0xFF64748B)
-                                    : const Color(0xFF94A3B8),
-                              ),
-                            ],
-                          ),
-                          if (groupReceivables > 0 || groupPayables > 0) ...[
-                            const SizedBox(height: 14),
-                            Row(
-                              children: [
-                                if (groupReceivables > 0)
-                                  Expanded(
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 12,
-                                        vertical: 10,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF10B981).withValues(alpha: 0.08),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          const Icon(
-                                            Icons.arrow_downward_rounded,
-                                            color: Color(0xFF10B981),
-                                            size: 16,
-                                          ),
-                                          const SizedBox(width: 6),
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  'To Receive',
-                                                  style: TextStyle(
-                                                    fontSize: 10,
-                                                    fontWeight: FontWeight.w500,
-                                                    color: const Color(0xFF10B981).withValues(alpha: 0.8),
-                                                  ),
-                                                ),
-                                                Text(
-                                                  Helpers.formatCurrency(groupReceivables),
-                                                  style: const TextStyle(
-                                                    fontSize: 14,
-                                                    fontWeight: FontWeight.w700,
-                                                    color: Color(0xFF10B981),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 6,
-                                              vertical: 2,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xFF10B981).withValues(alpha: 0.15),
-                                              borderRadius: BorderRadius.circular(6),
-                                            ),
-                                            child: Text(
-                                              '$receivableCount',
-                                              style: const TextStyle(
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.w700,
-                                                color: Color(0xFF10B981),
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                if (groupReceivables > 0 && groupPayables > 0)
-                                  const SizedBox(width: 10),
-                                if (groupPayables > 0)
-                                  Expanded(
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 12,
-                                        vertical: 10,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFF59E0B).withValues(alpha: 0.08),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          const Icon(
-                                            Icons.arrow_upward_rounded,
-                                            color: Color(0xFFF59E0B),
-                                            size: 16,
-                                          ),
-                                          const SizedBox(width: 6),
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  'To Pay',
-                                                  style: TextStyle(
-                                                    fontSize: 10,
-                                                    fontWeight: FontWeight.w500,
-                                                    color: const Color(0xFFF59E0B).withValues(alpha: 0.8),
-                                                  ),
-                                                ),
-                                                Text(
-                                                  Helpers.formatCurrency(groupPayables),
-                                                  style: const TextStyle(
-                                                    fontSize: 14,
-                                                    fontWeight: FontWeight.w700,
-                                                    color: Color(0xFFF59E0B),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 6,
-                                              vertical: 2,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
-                                              borderRadius: BorderRadius.circular(6),
-                                            ),
-                                            child: Text(
-                                              '$payableCount',
-                                              style: const TextStyle(
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.w700,
-                                                color: Color(0xFFF59E0B),
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ] else ...[
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                const Icon(
-                                  Icons.check_circle_rounded,
-                                  color: Color(0xFF10B981),
-                                  size: 16,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  'All settled up! 🎉',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
-                                    color: isDark
-                                        ? const Color(0xFF94A3B8)
-                                        : const Color(0xFF64748B),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ],
                       ),
                     ),
-                  ).animate().fadeIn(delay: 550.ms).slideY(begin: 0.1),
-                ),
-              ),
+                    SliverToBoxAdapter(
+                      child: SizedBox(
+                        height: 90,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          itemCount:
+                              group.memberIds.length + 1, // +1 for Add button
+                          itemBuilder: (context, index) {
+                            // Last item = Add Member button
+                            if (index == group.memberIds.length) {
+                              return Container(
+                                    width: 72,
+                                    margin: const EdgeInsets.only(right: 12),
+                                    child: Column(
+                                      children: [
+                                        GestureDetector(
+                                          onTap: () => _showAddMemberSheet(
+                                            context,
+                                            provider,
+                                            group,
+                                          ),
+                                          child: Container(
+                                            width: 48,
+                                            height: 48,
+                                            decoration: BoxDecoration(
+                                              color: isDark
+                                                  ? const Color(0xFF334155)
+                                                  : const Color(0xFFE2E8F0),
+                                              shape: BoxShape.circle,
+                                              border: Border.all(
+                                                color: const Color(
+                                                  0xFF2563EB,
+                                                ).withValues(alpha: 0.4),
+                                                width: 1.5,
+                                                strokeAlign: BorderSide
+                                                    .strokeAlignOutside,
+                                              ),
+                                            ),
+                                            alignment: Alignment.center,
+                                            child: const Icon(
+                                              Icons.person_add_rounded,
+                                              color: Color(0xFF2563EB),
+                                              size: 22,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          'Add',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w500,
+                                            color: isDark
+                                                ? const Color(0xFF94A3B8)
+                                                : const Color(0xFF64748B),
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                  .animate()
+                                  .fadeIn(delay: (640 + index * 60).ms)
+                                  .scale(begin: const Offset(0.5, 0.5));
+                            }
 
-              // ── Members Section ──
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
-                  child: Text(
-                    'Members',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                            final memberId = group.memberIds[index];
+                            final member = provider.getCachedUser(memberId);
+                            final isMe = memberId == userId;
+
+                            return Container(
+                                  width: 72,
+                                  margin: const EdgeInsets.only(right: 12),
+                                  child: Column(
+                                    children: [
+                                      Container(
+                                        width: 48,
+                                        height: 48,
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            colors: isMe
+                                                ? [
+                                                    const Color(0xFF2563EB),
+                                                    const Color(0xFF1E40AF),
+                                                  ]
+                                                : [
+                                                    const Color(0xFF334155),
+                                                    const Color(0xFF475569),
+                                                  ],
+                                          ),
+                                          shape: BoxShape.circle,
+                                          border: isMe
+                                              ? Border.all(
+                                                  color: const Color(
+                                                    0xFF2563EB,
+                                                  ),
+                                                  width: 2,
+                                                )
+                                              : null,
+                                        ),
+                                        alignment: Alignment.center,
+                                        child: Text(
+                                          member?.initials ?? '?',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        isMe
+                                            ? 'You'
+                                            : (member?.name.split(' ').first ??
+                                                  'User'),
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: isMe
+                                              ? FontWeight.w600
+                                              : FontWeight.w400,
+                                          color: isDark
+                                              ? Colors.white
+                                              : const Color(0xFF0F172A),
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ],
+                                  ),
+                                )
+                                .animate()
+                                .fadeIn(delay: (640 + index * 60).ms)
+                                .scale(
+                                  begin: const Offset(0.5, 0.5),
+                                  curve: Curves.easeOutBack,
+                                );
+                          },
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              ),
-              SliverToBoxAdapter(
-                child: SizedBox(
-                  height: 90,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    itemCount: group.memberIds.length + 1, // +1 for Add button
-                    itemBuilder: (context, index) {
-                      // Last item = Add Member button
-                      if (index == group.memberIds.length) {
-                        return Container(
-                          width: 72,
-                          margin: const EdgeInsets.only(right: 12),
-                          child: Column(
+
+                    // ── Recent Transactions ──
+                    if (groupSplits.isNotEmpty) ...[
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              GestureDetector(
-                                onTap: () => _showAddMemberSheet(context, provider, group),
-                                child: Container(
-                                  width: 48,
-                                  height: 48,
-                                  decoration: BoxDecoration(
-                                    color: isDark
-                                        ? const Color(0xFF334155)
-                                        : const Color(0xFFE2E8F0),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: const Color(0xFF6366F1).withValues(alpha: 0.4),
-                                      width: 1.5,
-                                      strokeAlign: BorderSide.strokeAlignOutside,
-                                    ),
-                                  ),
-                                  alignment: Alignment.center,
-                                  child: const Icon(
-                                    Icons.person_add_rounded,
-                                    color: Color(0xFF6366F1),
-                                    size: 22,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 6),
                               Text(
-                                'Add',
+                                'Recent Bills',
                                 style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w500,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
                                   color: isDark
-                                      ? const Color(0xFF94A3B8)
-                                      : const Color(0xFF64748B),
+                                      ? Colors.white
+                                      : const Color(0xFF0F172A),
                                 ),
-                                textAlign: TextAlign.center,
+                              ),
+                              GestureDetector(
+                                onTap: () => context.push(
+                                  '/group-bills/${widget.groupId}?name=${Uri.encodeComponent(group.name)}',
+                                ),
+                                child: Text(
+                                  'See all',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(0xFF2563EB),
+                                  ),
+                                ),
                               ),
                             ],
                           ),
-                        ).animate().fadeIn(delay: (640 + index * 60).ms).scale(begin: const Offset(0.5, 0.5));
-                      }
-
-                      final memberId = group.memberIds[index];
-                      final member = provider.getCachedUser(memberId);
-                      final isMe = memberId == userId;
-
-                      return Container(
-                        width: 72,
-                        margin: const EdgeInsets.only(right: 12),
-                        child: Column(
-                          children: [
-                            Container(
-                              width: 48,
-                              height: 48,
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: isMe
-                                      ? [const Color(0xFF6366F1), const Color(0xFF8B5CF6)]
-                                      : [
-                                          const Color(0xFF334155),
-                                          const Color(0xFF475569),
+                        ),
+                      ),
+                      SliverPadding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        sliver: SliverList(
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                              final t = groupSplits[index];
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 10),
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? const Color(0xFF1E293B)
+                                      : Colors.white,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: const Color(
+                                      0xFF2563EB,
+                                    ).withOpacity(0.05),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                        color: const Color(
+                                          0xFF2563EB,
+                                        ).withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Icon(
+                                        Helpers.getCategoryIcon(t.category),
+                                        color: const Color(0xFF2563EB),
+                                        size: 20,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            t.title.isNotEmpty
+                                                ? t.title
+                                                : t.category,
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w600,
+                                              color: isDark
+                                                  ? Colors.white
+                                                  : const Color(0xFF0F172A),
+                                            ),
+                                          ),
+                                          Text(
+                                            t.date,
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color: isDark
+                                                  ? const Color(0xFF64748B)
+                                                  : const Color(0xFF94A3B8),
+                                            ),
+                                          ),
                                         ],
+                                      ),
+                                    ),
+                                    Text(
+                                      Helpers.formatCurrency(t.amount),
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w700,
+                                        color: Color(0xFF2563EB),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                shape: BoxShape.circle,
-                                border: isMe
-                                    ? Border.all(
-                                        color: const Color(0xFF6366F1), width: 2)
-                                    : null,
-                              ),
-                              alignment: Alignment.center,
-                              child: Text(
-                                member?.initials ?? '?',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              isMe ? 'You' : (member?.name.split(' ').first ?? 'User'),
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: isMe ? FontWeight.w600 : FontWeight.w400,
-                                color: isDark
-                                    ? Colors.white
-                                    : const Color(0xFF0F172A),
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
+                              );
+                            },
+                            childCount: groupSplits.length > 5
+                                ? 5
+                                : groupSplits.length,
+                          ),
                         ),
-                      ).animate().fadeIn(delay: (640 + index * 60).ms).scale(begin: const Offset(0.5, 0.5), curve: Curves.easeOutBack);
-                    },
-                  ),
+                      ),
+                    ],
+
+                    // Bottom padding
+                  ],
                 ),
               ),
-
-              // ── Spin the Wheel ──
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-                  child: GestureDetector(
-                    onTap: () {
-                      // Resolve member names
-                      final memberNames = group.memberIds.map((id) {
-                        if (id == userId) return 'You';
-                        final member = provider.getCachedUser(id);
-                        return member?.name.split(' ').first ?? 'User';
-                      }).toList();
-                      
-                      if (memberNames.length < 2) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Need at least 2 members to spin!'),
-                            backgroundColor: Color(0xFFF59E0B),
-                          ),
-                        );
-                        return;
-                      }
-
-                      context.push('/spin-wheel', extra: {
-                        'memberNames': memberNames,
-                        'groupName': group.name,
-                      });
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [Color(0xFFF59E0B), Color(0xFFF97316)],
-                        ),
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFFF59E0B).withValues(alpha: 0.3),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Text('🎰', style: TextStyle(fontSize: 24)),
-                          ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Spin the Wheel!',
-                                  style: GoogleFonts.plusJakartaSans(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w800,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                Text(
-                                  'Who pays this time? Let fate decide! 🎲',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.white.withValues(alpha: 0.85),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Icon(
-                            Icons.arrow_forward_rounded,
-                            color: Colors.white.withValues(alpha: 0.8),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ).animate().fadeIn(delay: 700.ms).slideY(begin: 0.15),
-                ),
-              ),
-
-              // ── Transactions Section (Collapsed) ──
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-                  child: InkWell(
-                    onTap: () => context.push(
-                      '/group-bills/${widget.groupId}?name=${Uri.encodeComponent(group.name)}',
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                    child: Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: const Color(0xFF6366F1).withValues(alpha: 0.1),
-                          width: 1,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.03),
-                            blurRadius: 10,
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF6366F1).withValues(alpha: 0.1),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.receipt_long_rounded,
-                              color: Color(0xFF6366F1),
-                              size: 24,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Group Bill History',
-                                  style: GoogleFonts.plusJakartaSans(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w700,
-                                    color: isDark ? Colors.white : const Color(0xFF0F172A),
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  'View all ${groupSplits.length} shared bills',
-                                  style: const TextStyle(
-                                    fontSize: 13,
-                                    color: Color(0xFF94A3B8),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const Icon(
-                            Icons.arrow_forward_ios_rounded,
-                            size: 16,
-                            color: Color(0xFF94A3B8),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-
-              // Bottom padding
-              const SliverPadding(padding: EdgeInsets.only(bottom: 100)),
             ],
           ),
           floatingActionButton: FloatingActionButton.extended(
             onPressed: () => context.push('/split?groupId=${widget.groupId}'),
-            backgroundColor: const Color(0xFF6366F1),
+            backgroundColor: const Color(0xFF2563EB),
             icon: const Icon(Icons.call_split_rounded, color: Colors.white),
             label: const Text(
               'Split Bill',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         );
@@ -758,7 +908,11 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
     );
   }
 
-  void _showAddMemberSheet(BuildContext context, AppProvider provider, Group group) {
+  void _showAddMemberSheet(
+    BuildContext context,
+    AppProvider provider,
+    Group group,
+  ) {
     final searchCtrl = TextEditingController();
     List<AppUser> searchResults = [];
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -802,7 +956,9 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
             height: MediaQuery.of(ctx).size.height * 0.6,
             decoration: BoxDecoration(
               color: isDark ? const Color(0xFF1E293B) : Colors.white,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(24),
+              ),
             ),
             child: Column(
               children: [
@@ -812,7 +968,9 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1),
+                    color: isDark
+                        ? const Color(0xFF475569)
+                        : const Color(0xFFCBD5E1),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -841,7 +999,9 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
                       ),
                       hintText: 'Search by name, phone or username',
                       filled: true,
-                      fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+                      fillColor: isDark
+                          ? const Color(0xFF0F172A)
+                          : const Color(0xFFF1F5F9),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
                         borderSide: BorderSide.none,
@@ -871,7 +1031,7 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
                             final u = searchResults[i];
                             return ListTile(
                               leading: CircleAvatar(
-                                backgroundColor: const Color(0xFF6366F1),
+                                backgroundColor: const Color(0xFF2563EB),
                                 radius: 20,
                                 child: Text(
                                   u.initials,
@@ -886,25 +1046,36 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
                                 u.name,
                                 style: TextStyle(
                                   fontWeight: FontWeight.w600,
-                                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                  color: isDark
+                                      ? Colors.white
+                                      : const Color(0xFF0F172A),
                                 ),
                               ),
                               subtitle: Text(
                                 u.phone,
-                                style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFF94A3B8),
+                                ),
                               ),
                               trailing: ElevatedButton(
                                 onPressed: () => addMember(u),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF6366F1),
+                                  backgroundColor: const Color(0xFF2563EB),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(10),
                                   ),
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 8,
+                                  ),
                                 ),
                                 child: const Text(
                                   'Add',
-                                  style: TextStyle(fontSize: 13, color: Colors.white),
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.white,
+                                  ),
                                 ),
                               ),
                             );
@@ -954,7 +1125,8 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFF43F5E),
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
             child: const Text('Delete'),
           ),
@@ -1001,10 +1173,7 @@ class _InfoCard extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             title,
-            style: const TextStyle(
-              fontSize: 12,
-              color: Color(0xFF94A3B8),
-            ),
+            style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
           ),
           const SizedBox(height: 2),
           Text(

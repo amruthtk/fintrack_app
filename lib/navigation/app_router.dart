@@ -17,6 +17,7 @@ import '../screens/groups_screen.dart';
 import '../screens/settlements_screen.dart';
 import '../screens/pools_screen.dart';
 import '../screens/scan_screen.dart';
+import '../screens/quick_send_screen.dart';
 import '../screens/splash_screen.dart';
 import '../screens/group_details_screen.dart';
 import '../screens/subscriptions_screen.dart';
@@ -85,11 +86,12 @@ GoRouter createRouter(AppProvider provider) {
             pageBuilder: (context, state) =>
                 const NoTransitionPage(child: DashboardScreen()),
           ),
+          GoRoute(
+            path: '/groups',
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: GroupsScreen()),
+          ),
         ],
-      ),
-      GoRoute(
-        path: '/groups',
-        builder: (context, state) => const GroupsScreen(),
       ),
       GoRoute(path: '/scan', builder: (context, state) => const ScanScreen()),
       GoRoute(
@@ -100,9 +102,18 @@ GoRouter createRouter(AppProvider provider) {
         },
       ),
       GoRoute(path: '/pools', builder: (context, state) => const PoolsScreen()),
-      GoRoute(path: '/to-pay', builder: (context, state) => const ToPayScreen()),
-      GoRoute(path: '/to-receive', builder: (context, state) => const ToReceiveScreen()),
-      GoRoute(path: '/today-spent', builder: (context, state) => const TodaySpentScreen()),
+      GoRoute(
+        path: '/to-pay',
+        builder: (context, state) => const ToPayScreen(),
+      ),
+      GoRoute(
+        path: '/to-receive',
+        builder: (context, state) => const ToReceiveScreen(),
+      ),
+      GoRoute(
+        path: '/today-spent',
+        builder: (context, state) => const TodaySpentScreen(),
+      ),
       GoRoute(
         path: '/profile',
         builder: (context, state) => const ProfileScreen(),
@@ -111,12 +122,17 @@ GoRouter createRouter(AppProvider provider) {
         path: '/add-bill',
         builder: (context, state) {
           final type = state.uri.queryParameters['type'] ?? 'expense';
-          return AddBillScreen(initialType: type);
+          final lock = state.uri.queryParameters['lock'] == 'true';
+          return AddBillScreen(initialType: type, lockType: lock);
         },
       ),
       GoRoute(
         path: '/split',
         builder: (context, state) => const SplitFriendsScreen(),
+      ),
+      GoRoute(
+        path: '/quick-send',
+        builder: (context, state) => const QuickSendScreen(),
       ),
       GoRoute(
         path: '/transactions',
@@ -163,7 +179,11 @@ GoRouter createRouter(AppProvider provider) {
         path: '/spin-wheel',
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>?;
-          final members = (extra?['memberNames'] as List?)?.map((e) => e.toString()).toList() ?? [];
+          final members =
+              (extra?['memberNames'] as List?)
+                  ?.map((e) => e.toString())
+                  .toList() ??
+              [];
           final groupName = extra?['groupName'] as String? ?? 'Group';
           return SpinWheelScreen(memberNames: members, groupName: groupName);
         },

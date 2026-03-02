@@ -284,7 +284,7 @@ class _SplitFriendsScreenState extends State<SplitFriendsScreen> {
                           style: TextStyle(fontSize: 12),
                         ),
                         style: TextButton.styleFrom(
-                          foregroundColor: const Color(0xFF6366F1),
+                          foregroundColor: const Color(0xFF2563EB),
                           padding: EdgeInsets.zero,
                         ),
                       ),
@@ -307,7 +307,7 @@ class _SplitFriendsScreenState extends State<SplitFriendsScreen> {
                           padding: const EdgeInsets.symmetric(horizontal: 14),
                           decoration: BoxDecoration(
                             color: active
-                                ? const Color(0xFF6366F1)
+                                ? const Color(0xFF2563EB)
                                 : (isDark
                                       ? const Color(0xFF1E293B)
                                       : Colors.white),
@@ -386,7 +386,7 @@ class _SplitFriendsScreenState extends State<SplitFriendsScreen> {
                           .map(
                             (u) => ListTile(
                               leading: CircleAvatar(
-                                backgroundColor: const Color(0xFF6366F1),
+                                backgroundColor: const Color(0xFF2563EB),
                                 radius: 18,
                                 child: Text(
                                   u.initials,
@@ -423,7 +423,7 @@ class _SplitFriendsScreenState extends State<SplitFriendsScreen> {
                       children: [
                         CircleAvatar(
                           backgroundColor: const Color(
-                            0xFF6366F1,
+                            0xFF2563EB,
                           ).withValues(alpha: 0.15),
                           radius: 18,
                           child: Text(
@@ -431,7 +431,7 @@ class _SplitFriendsScreenState extends State<SplitFriendsScreen> {
                                 ? _members[i].name[0].toUpperCase()
                                 : '?',
                             style: const TextStyle(
-                              color: Color(0xFF6366F1),
+                              color: Color(0xFF2563EB),
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -480,7 +480,7 @@ class _SplitFriendsScreenState extends State<SplitFriendsScreen> {
                                 '₹${_members[i].amount.toStringAsFixed(0)}',
                                 style: const TextStyle(
                                   fontSize: 13,
-                                  color: Color(0xFF6366F1),
+                                  color: Color(0xFF2563EB),
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -528,7 +528,7 @@ class _SplitFriendsScreenState extends State<SplitFriendsScreen> {
                           ),
                           decoration: BoxDecoration(
                             color: active
-                                ? const Color(0xFF6366F1)
+                                ? const Color(0xFF2563EB)
                                 : isDark
                                 ? const Color(0xFF1E293B)
                                 : Colors.white,
@@ -564,7 +564,7 @@ class _SplitFriendsScreenState extends State<SplitFriendsScreen> {
                   child: ElevatedButton(
                     onPressed: _isSubmitting ? null : _submit,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF6366F1),
+                      backgroundColor: const Color(0xFF2563EB),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),

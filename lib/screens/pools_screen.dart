@@ -118,7 +118,7 @@ class PoolsScreen extends StatelessWidget {
                               backgroundColor: isDark
                                   ? const Color(0xFF334155)
                                   : const Color(0xFFE2E8F0),
-                              color: const Color(0xFF6366F1),
+                              color: const Color(0xFF2563EB),
                               minHeight: 6,
                             ),
                           ),
@@ -154,6 +154,30 @@ class PoolsScreen extends StatelessWidget {
               ],
             );
           },
+        ),
+      ),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 50, right: 20),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF2563EB), Color(0xFF1E40AF)],
+            ),
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF2563EB).withValues(alpha: 0.4),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: FloatingActionButton(
+            onPressed: () => context.push('/create-pool-bill'),
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
+          ),
         ),
       ),
     );

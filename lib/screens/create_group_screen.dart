@@ -177,13 +177,13 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                     height: 44,
                     decoration: BoxDecoration(
                       color: active
-                          ? const Color(0xFF6366F1).withValues(alpha: 0.15)
+                          ? const Color(0xFF2563EB).withValues(alpha: 0.15)
                           : isDark
                           ? const Color(0xFF1E293B)
                           : Colors.white,
                       borderRadius: BorderRadius.circular(12),
                       border: active
-                          ? Border.all(color: const Color(0xFF6366F1), width: 2)
+                          ? Border.all(color: const Color(0xFF2563EB), width: 2)
                           : null,
                     ),
                     alignment: Alignment.center,
@@ -227,7 +227,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                       .map(
                         (u) => ListTile(
                           leading: CircleAvatar(
-                            backgroundColor: const Color(0xFF6366F1),
+                            backgroundColor: const Color(0xFF2563EB),
                             radius: 18,
                             child: Text(
                               u.initials,
@@ -262,7 +262,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                   .map(
                     (m) => Chip(
                       avatar: CircleAvatar(
-                        backgroundColor: const Color(0xFF6366F1),
+                        backgroundColor: const Color(0xFF2563EB),
                         child: Text(
                           m.initials,
                           style: const TextStyle(
@@ -293,7 +293,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
               child: ElevatedButton(
                 onPressed: _saving ? null : _save,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF6366F1),
+                  backgroundColor: const Color(0xFF2563EB),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),

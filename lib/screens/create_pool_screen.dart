@@ -385,7 +385,7 @@ class _CreatePoolScreenState extends State<CreatePoolScreen> {
                           .map(
                             (u) => ListTile(
                               leading: CircleAvatar(
-                                backgroundColor: const Color(0xFF06B6D4),
+                                backgroundColor: const Color(0xFF2563EB),
                                 radius: 18,
                                 child: Text(
                                   u.initials,
@@ -422,7 +422,7 @@ class _CreatePoolScreenState extends State<CreatePoolScreen> {
                       children: [
                         CircleAvatar(
                           backgroundColor: const Color(
-                            0xFF06B6D4,
+                            0xFF2563EB,
                           ).withValues(alpha: 0.15),
                           radius: 18,
                           child: Text(
@@ -430,7 +430,7 @@ class _CreatePoolScreenState extends State<CreatePoolScreen> {
                                 ? _members[i].name[0].toUpperCase()
                                 : '?',
                             style: const TextStyle(
-                              color: Color(0xFF06B6D4),
+                              color: Color(0xFF2563EB),
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -484,7 +484,7 @@ class _CreatePoolScreenState extends State<CreatePoolScreen> {
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: _members[i].isPayer
-                                      ? const Color(0xFF06B6D4)
+                                      ? const Color(0xFF2563EB)
                                       : const Color(0xFFF59E0B),
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -534,7 +534,7 @@ class _CreatePoolScreenState extends State<CreatePoolScreen> {
                           ),
                           decoration: BoxDecoration(
                             color: active
-                                ? const Color(0xFF06B6D4)
+                                ? const Color(0xFF2563EB)
                                 : isDark
                                 ? const Color(0xFF1E293B)
                                 : Colors.white,
@@ -587,7 +587,7 @@ class _CreatePoolScreenState extends State<CreatePoolScreen> {
                   child: ElevatedButton(
                     onPressed: _isSubmitting ? null : _submit,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF06B6D4),
+                      backgroundColor: const Color(0xFF2563EB),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),

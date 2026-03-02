@@ -90,11 +90,11 @@ class GroupBillsScreen extends StatelessWidget {
                               Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF6366F1).withValues(alpha: 0.1),
+                                  color: const Color(0xFF2563EB).withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: const Icon(Icons.receipt_long_rounded,
-                                    color: Color(0xFF6366F1), size: 20),
+                                    color: Color(0xFF2563EB), size: 20),
                               ),
                               const SizedBox(width: 14),
                               Expanded(
@@ -103,7 +103,7 @@ class GroupBillsScreen extends StatelessWidget {
                                   children: [
                                     Text(
                                       t.title,
-                                      style: GoogleFonts.plusJakartaSans(
+                                      style: GoogleFonts.inter(
                                         fontWeight: FontWeight.w700,
                                         fontSize: 15,
                                         color: isDark ? Colors.white : const Color(0xFF0F172A),
@@ -124,7 +124,7 @@ class GroupBillsScreen extends StatelessWidget {
                                 children: [
                                   Text(
                                     Helpers.formatCurrency(t.amount),
-                                    style: GoogleFonts.plusJakartaSans(
+                                    style: GoogleFonts.inter(
                                       fontWeight: FontWeight.w800,
                                       fontSize: 16,
                                       color: isDark ? Colors.white : const Color(0xFF0F172A),
@@ -198,7 +198,7 @@ class GroupBillsScreen extends StatelessWidget {
                                       style: TextStyle(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w700,
-                                        color: isPaid ? const Color(0xFF10B981) : const Color(0xFF6366F1),
+                                        color: isPaid ? const Color(0xFF10B981) : const Color(0xFF2563EB),
                                       ),
                                     ),
                                   ],
@@ -224,15 +224,15 @@ class GroupBillsScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: const Color(0xFF6366F1).withValues(alpha: 0.1),
+              color: const Color(0xFF2563EB).withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.receipt_rounded, size: 50, color: Color(0xFF6366F1)),
+            child: const Icon(Icons.receipt_rounded, size: 50, color: Color(0xFF2563EB)),
           ),
           const SizedBox(height: 20),
           Text(
             'No Bills Yet',
-            style: GoogleFonts.plusJakartaSans(
+            style: GoogleFonts.inter(
               fontSize: 20,
               fontWeight: FontWeight.w800,
               color: isDark ? Colors.white : const Color(0xFF0F172A),

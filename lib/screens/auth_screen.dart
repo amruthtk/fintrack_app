@@ -271,7 +271,7 @@ class _AuthScreenState extends State<AuthScreen> {
             end: Alignment.bottomRight,
             colors: isDark
                 ? [const Color(0xFF0F172A), const Color(0xFF1E1B4B)]
-                : [const Color(0xFF6366F1), const Color(0xFF8B5CF6)],
+                : [const Color(0xFF2563EB), const Color(0xFF1E40AF)],
           ),
         ),
         child: SafeArea(
@@ -441,7 +441,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 ? null
                 : (_isLogin ? _handleLogin : _handleRegister),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF6366F1),
+              backgroundColor: const Color(0xFF2563EB),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
               ),
@@ -550,7 +550,7 @@ class _AuthScreenState extends State<AuthScreen> {
             child: ElevatedButton(
               onPressed: _isLoading ? null : _handleForgotPassword,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF6366F1),
+                backgroundColor: const Color(0xFF2563EB),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
                 ),
@@ -606,7 +606,7 @@ class _AuthScreenState extends State<AuthScreen> {
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF6366F1),
+              color: Color(0xFF2563EB),
             ),
           ),
           const SizedBox(height: 8),
@@ -695,7 +695,7 @@ class _AuthScreenState extends State<AuthScreen> {
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF6366F1),
+              color: Color(0xFF2563EB),
             ),
           ),
         ),
@@ -761,7 +761,7 @@ class _AuthScreenState extends State<AuthScreen> {
         style: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w800,
-          color: Color(0xFF6366F1),
+          color: Color(0xFF2563EB),
         ),
       ),
       const SizedBox(height: 4),
@@ -797,7 +797,7 @@ class _AuthScreenState extends State<AuthScreen> {
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF6366F1),
+            color: Color(0xFF2563EB),
           ),
         ),
         const SizedBox(height: 6),
@@ -822,11 +822,11 @@ class _AuthScreenState extends State<AuthScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
         color: value
-            ? const Color(0xFF6366F1).withValues(alpha: 0.1)
+            ? const Color(0xFF2563EB).withValues(alpha: 0.1)
             : (isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9)),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: value ? const Color(0xFF6366F1) : Colors.transparent,
+          color: value ? const Color(0xFF2563EB) : Colors.transparent,
           width: 1.5,
         ),
       ),
@@ -839,14 +839,14 @@ class _AuthScreenState extends State<AuthScreen> {
               fontSize: 14,
               fontWeight: FontWeight.w700,
               color: value
-                  ? const Color(0xFF6366F1)
+                  ? const Color(0xFF2563EB)
                   : (isDark ? Colors.white70 : Colors.black87),
             ),
           ),
           Switch(
             value: value,
             onChanged: onChanged,
-            activeThumbColor: const Color(0xFF6366F1),
+            activeThumbColor: const Color(0xFF2563EB),
           ),
         ],
       ),
@@ -873,7 +873,7 @@ class _TabButton extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
-          color: active ? const Color(0xFF6366F1) : Colors.transparent,
+          color: active ? const Color(0xFF2563EB) : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
         ),
         alignment: Alignment.center,

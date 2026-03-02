@@ -496,28 +496,29 @@ class AppProvider extends ChangeNotifier {
         .where('memberIds', arrayContains: userId)
         .snapshots()
         .listen((snap) async {
-      final allTx = snap.docs.map((d) => tx.Transaction.fromFirestore(d)).toList()
-        ..sort((a, b) {
-          if (a.createdAt != null && b.createdAt != null) {
-            return b.createdAt!.compareTo(a.createdAt!);
+          final allTx =
+              snap.docs.map((d) => tx.Transaction.fromFirestore(d)).toList()
+                ..sort((a, b) {
+                  if (a.createdAt != null && b.createdAt != null) {
+                    return b.createdAt!.compareTo(a.createdAt!);
+                  }
+                  return '${b.date}T${b.time}'.compareTo('${a.date}T${a.time}');
+                });
+
+          // Cache encountered users
+          final allMemberIds = allTx.expand((t) => t.memberIds).toSet();
+          for (final t in allTx) {
+            if (t.payerId != null && t.payerId!.isNotEmpty) {
+              allMemberIds.add(t.payerId!);
+            }
           }
-          return '${b.date}T${b.time}'.compareTo('${a.date}T${a.time}');
+          final allIdsToFetch = allMemberIds.toList();
+          if (allIdsToFetch.isNotEmpty) {
+            await fetchUsersByIds(allIdsToFetch);
+          }
+
+          _computeStats(allTx, userId);
         });
-
-      // Cache encountered users
-      final allMemberIds = allTx.expand((t) => t.memberIds).toSet();
-      for (final t in allTx) {
-        if (t.payerId != null && t.payerId!.isNotEmpty) {
-          allMemberIds.add(t.payerId!);
-        }
-      }
-      final allIdsToFetch = allMemberIds.toList();
-      if (allIdsToFetch.isNotEmpty) {
-        await fetchUsersByIds(allIdsToFetch);
-      }
-
-      _computeStats(allTx, userId);
-    });
   }
 
   Future<void> fetchTransactions(String userId) async {
@@ -530,7 +531,7 @@ class AppProvider extends ChangeNotifier {
         .collection('bills')
         .where('memberIds', arrayContains: userId)
         .get();
-    
+
     final allTx = snap.docs.map((d) => tx.Transaction.fromFirestore(d)).toList()
       ..sort((a, b) {
         if (a.createdAt != null && b.createdAt != null) {
@@ -601,79 +602,84 @@ class AppProvider extends ChangeNotifier {
     }
 
     // 1. Validation Logic (Perform checks BEFORE any database writes)
-  Wallet? targetWallet;
-  double? walletUpdateAmount;
+    Wallet? targetWallet;
+    double? walletUpdateAmount;
 
-  if (data['wallet'] != null && data['isAdjustment'] != true) {
-    targetWallet = _user!.wallets
-        .where((w) => w.name == data['wallet'])
-        .firstOrNull;
-    
-    if (targetWallet != null) {
-      final amount = (data['amount'] as num).toDouble();
-      
-      // Check for insufficient balance for expenses and splits
-      if ((data['type'] == 'expense' || data['type'] == 'split') && 
-          data['payerId'] == _user!.id &&
-          targetWallet.balance < amount) {
-        throw Exception(
-          'Insufficient balance in your ${targetWallet.name}. Please reconcile or top-up.',
-        );
-      }
+    if (data['wallet'] != null && data['isAdjustment'] != true) {
+      targetWallet = _user!.wallets
+          .where((w) => w.name == data['wallet'])
+          .firstOrNull;
 
-      // Calculate balance update
-      if (data['type'] == 'expense' || 
-         (data['type'] == 'split' && data['payerId'] == _user!.id)) {
-        walletUpdateAmount = targetWallet.balance - amount;
-      } else if (data['type'] == 'income') {
-        walletUpdateAmount = targetWallet.balance + amount;
-      }
-    }
-  }
+      if (targetWallet != null) {
+        final amount = (data['amount'] as num).toDouble();
 
-  // 2. Prepare Data
-  final billData = {
-    ...data,
-    'userId': _user!.id,
-    'memberIds':
-        data['memberIds'] ??
-        (data['members'] != null
-            ? (data['members'] as List).map((m) => m['id']).toList()
-            : [_user!.id]),
-    'createdAt': DateTime.now().toIso8601String(),
-  };
+        // Check for insufficient balance for expenses and splits
+        // Credit cards are allowed to go negative (debt)
+        if (targetWallet.type != 'credit') {
+          final bool isExpense = data['type'] == 'expense';
+          final bool isSplitPayer =
+              data['type'] == 'split' && data['payerId'] == _user!.id;
 
-  // 3. Database Writes (Perform only if validation passed)
-  final docRef = await _db.collection('bills').add(billData);
+          if ((isExpense || isSplitPayer) && targetWallet.balance < amount) {
+            throw Exception(
+              'Insufficient balance in ${targetWallet.name}. Available: ₹${targetWallet.balance.toStringAsFixed(0)}',
+            );
+          }
+        }
 
-  // Update wallet if needed
-  if (targetWallet != null && walletUpdateAmount != null) {
-    await _updateWalletInFirestore(targetWallet.id, walletUpdateAmount);
-  }
-
-  // Send notifications for splits
-  if (data['type'] == 'split' && data['members'] != null) {
-    final members = data['members'] as List;
-    for (final m in members) {
-      if (m['id'] != data['payerId']) {
-        await _db.collection('notifications').add({
-          'type': 'split_request',
-          'billId': docRef.id,
-          'fromUserId': _user!.id,
-          'fromUserName': _user!.name,
-          'toUserId': m['id'],
-          'amount': m['amount'],
-          'title': data['title'] ?? 'Split Bill',
-          'read': false,
-          'createdAt': DateTime.now().toIso8601String(),
-        });
+        // Calculate balance update
+        if (data['type'] == 'expense' ||
+            (data['type'] == 'split' && data['payerId'] == _user!.id)) {
+          walletUpdateAmount = targetWallet.balance - amount;
+        } else if (data['type'] == 'income') {
+          walletUpdateAmount = targetWallet.balance + amount;
+        }
       }
     }
-  }
 
-  await fetchTransactions(_user!.id);
-  return docRef.id;
-}
+    // 2. Prepare Data
+    final billData = {
+      ...data,
+      'userId': _user!.id,
+      'memberIds':
+          data['memberIds'] ??
+          (data['members'] != null
+              ? (data['members'] as List).map((m) => m['id']).toList()
+              : [_user!.id]),
+      'createdAt': DateTime.now().toIso8601String(),
+    };
+
+    // 3. Database Writes (Perform only if validation passed)
+    final docRef = await _db.collection('bills').add(billData);
+
+    // Update wallet if needed
+    if (targetWallet != null && walletUpdateAmount != null) {
+      await _updateWalletInFirestore(targetWallet.id, walletUpdateAmount);
+    }
+
+    // Send notifications for splits
+    if (data['type'] == 'split' && data['members'] != null) {
+      final members = data['members'] as List;
+      for (final m in members) {
+        if (m['id'] != data['payerId']) {
+          await _db.collection('notifications').add({
+            'type': 'split_request',
+            'billId': docRef.id,
+            'fromUserId': _user!.id,
+            'fromUserName': _user!.name,
+            'toUserId': m['id'],
+            'amount': m['amount'],
+            'title': data['title'] ?? 'Split Bill',
+            'read': false,
+            'createdAt': DateTime.now().toIso8601String(),
+          });
+        }
+      }
+    }
+
+    await fetchTransactions(_user!.id);
+    return docRef.id;
+  }
 
   Future<void> deleteTransaction(tx.Transaction transaction) async {
     if (_user == null) {

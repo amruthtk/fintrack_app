@@ -320,7 +320,7 @@ class _ExpenditureDetailsSheetState extends State<_ExpenditureDetailsSheet> {
                       duration: const Duration(milliseconds: 200),
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
-                        color: active ? const Color(0xFF6366F1) : (isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9)),
+                        color: active ? const Color(0xFF2563EB) : (isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9)),
                         borderRadius: BorderRadius.circular(12),
                         border: active ? null : Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
                       ),
@@ -339,7 +339,7 @@ class _ExpenditureDetailsSheetState extends State<_ExpenditureDetailsSheet> {
                         duration: const Duration(milliseconds: 200),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         decoration: BoxDecoration(
-                          color: !isSplit ? const Color(0xFF6366F1) : (isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9)),
+                          color: !isSplit ? const Color(0xFF2563EB) : (isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9)),
                           borderRadius: BorderRadius.circular(14),
                         ),
                         child: Row(
@@ -361,7 +361,7 @@ class _ExpenditureDetailsSheetState extends State<_ExpenditureDetailsSheet> {
                         duration: const Duration(milliseconds: 200),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         decoration: BoxDecoration(
-                          color: isSplit ? const Color(0xFF6366F1) : (isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9)),
+                          color: isSplit ? const Color(0xFF2563EB) : (isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9)),
                           borderRadius: BorderRadius.circular(14),
                         ),
                         child: Row(
@@ -410,7 +410,7 @@ class _ExpenditureDetailsSheetState extends State<_ExpenditureDetailsSheet> {
                   if (mounted) Navigator.pop(context);
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF6366F1),
+                  backgroundColor: const Color(0xFF2563EB),
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),

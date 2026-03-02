@@ -63,7 +63,7 @@ class TodaySpentScreen extends StatelessWidget {
                 child: const Text(
                   'View All',
                   style: TextStyle(
-                    color: Color(0xFF6366F1),
+                    color: Color(0xFF2563EB),
                     fontWeight: FontWeight.w600,
                     fontSize: 13,
                   ),
@@ -132,7 +132,7 @@ class TodaySpentScreen extends StatelessWidget {
                                   ),
                                   Text(
                                     Helpers.formatCurrency(totalSpent),
-                                    style: GoogleFonts.plusJakartaSans(
+                                    style: GoogleFonts.inter(
                                       fontSize: 28,
                                       fontWeight: FontWeight.w800,
                                       color: Colors.white,
@@ -173,7 +173,7 @@ class TodaySpentScreen extends StatelessWidget {
                     if (sortedCategories.isNotEmpty) ...[
                       Text(
                         'By Category',
-                        style: GoogleFonts.plusJakartaSans(
+                        style: GoogleFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
                           color: isDark
@@ -292,7 +292,7 @@ class TodaySpentScreen extends StatelessWidget {
                     // ── Transactions List ──
                     Text(
                       'All Transactions',
-                      style: GoogleFonts.plusJakartaSans(
+                      style: GoogleFonts.inter(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
                         color: isDark
@@ -333,7 +333,7 @@ class TodaySpentScreen extends StatelessWidget {
           const SizedBox(height: 20),
           Text(
             'No Spending Today!',
-            style: GoogleFonts.plusJakartaSans(
+            style: GoogleFonts.inter(
               fontSize: 22,
               fontWeight: FontWeight.w800,
               color: isDark ? Colors.white : const Color(0xFF0F172A),
@@ -450,7 +450,7 @@ class _TransactionTile extends StatelessWidget {
             children: [
               Text(
                 '-${Helpers.formatCurrency(transaction.amount)}',
-                style: GoogleFonts.plusJakartaSans(
+                style: GoogleFonts.inter(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
                   color: const Color(0xFFF43F5E),

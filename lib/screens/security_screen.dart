@@ -125,12 +125,12 @@ class _SecurityScreenState extends State<SecurityScreen> {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF6366F1).withValues(alpha: 0.1),
+                        color: const Color(0xFF2563EB).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(
                         Icons.lock_rounded,
-                        color: Color(0xFF6366F1),
+                        color: Color(0xFF2563EB),
                         size: 20,
                       ),
                     ),
@@ -215,16 +215,16 @@ class _SecurityScreenState extends State<SecurityScreen> {
                         ? null
                         : _handleUpdatePassword,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF6366F1),
+                      backgroundColor: const Color(0xFF2563EB),
                       disabledBackgroundColor: const Color(
-                        0xFF6366F1,
+                        0xFF2563EB,
                       ).withValues(alpha: 0.5),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
                       elevation: 4,
                       shadowColor: const Color(
-                        0xFF6366F1,
+                        0xFF2563EB,
                       ).withValues(alpha: 0.3),
                     ),
                     child: _isLoading

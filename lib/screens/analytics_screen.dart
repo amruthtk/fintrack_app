@@ -106,7 +106,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                               padding: const EdgeInsets.symmetric(vertical: 10),
                               decoration: BoxDecoration(
                                 color: active
-                                    ? const Color(0xFF6366F1)
+                                    ? const Color(0xFF2563EB)
                                     : Colors.transparent,
                                 borderRadius: BorderRadius.circular(10),
                               ),
@@ -209,12 +209,12 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                                   final entry = e.value;
                                   final pct = (entry.value / totalSpent * 100);
                                   final colors = [
-                                    const Color(0xFF6366F1),
+                                    const Color(0xFF2563EB),
                                     const Color(0xFFF43F5E),
                                     const Color(0xFF10B981),
                                     const Color(0xFFF59E0B),
                                     const Color(0xFF06B6D4),
-                                    const Color(0xFF8B5CF6),
+                                    const Color(0xFF1E40AF),
                                     const Color(0xFFF97316),
                                     const Color(0xFFEC4899),
                                   ];
@@ -244,12 +244,12 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                               final idx = e.key;
                               final entry = e.value;
                               final colors = [
-                                const Color(0xFF6366F1),
+                                const Color(0xFF2563EB),
                                 const Color(0xFFF43F5E),
                                 const Color(0xFF10B981),
                                 const Color(0xFFF59E0B),
                                 const Color(0xFF06B6D4),
-                                const Color(0xFF8B5CF6),
+                                const Color(0xFF1E40AF),
                                 const Color(0xFFF97316),
                                 const Color(0xFFEC4899),
                               ];
@@ -322,7 +322,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                                       backgroundColor: isDark
                                           ? const Color(0xFF334155)
                                           : const Color(0xFFE2E8F0),
-                                      color: const Color(0xFF6366F1),
+                                      color: const Color(0xFF2563EB),
                                       minHeight: 6,
                                     ),
                                   ),

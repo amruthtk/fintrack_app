@@ -95,14 +95,14 @@ class SubscriptionsScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFF6366F1), Color(0xFF7C3AED)],
+                    colors: [Color(0xFF2563EB), Color(0xFF7C3AED)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF6366F1).withValues(alpha: 0.3),
+                      color: const Color(0xFF2563EB).withValues(alpha: 0.3),
                       blurRadius: 20,
                       offset: const Offset(0, 8),
                     ),
@@ -251,7 +251,7 @@ class _SubscriptionCard extends StatelessWidget {
       case 'Weekly':
         return const Color(0xFFF59E0B);
       case 'Quarterly':
-        return const Color(0xFF8B5CF6);
+        return const Color(0xFF1E40AF);
       case 'Yearly':
         return const Color(0xFF10B981);
       default:

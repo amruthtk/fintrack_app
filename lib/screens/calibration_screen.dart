@@ -131,7 +131,7 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: const Color(
-                  0xFF6366F1,
+                  0xFF2563EB,
                 ).withValues(alpha: isDark ? 0.1 : 0.05),
               ),
             ).animate().fadeIn(duration: 1.seconds).scale(),
@@ -170,7 +170,7 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
                             height: 64,
                             decoration: BoxDecoration(
                               gradient: const LinearGradient(
-                                colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                                colors: [Color(0xFF2563EB), Color(0xFF1E40AF)],
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                               ),
@@ -178,7 +178,7 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
                               boxShadow: [
                                 BoxShadow(
                                   color: const Color(
-                                    0xFF6366F1,
+                                    0xFF2563EB,
                                   ).withValues(alpha: 0.3),
                                   blurRadius: 20,
                                   offset: const Offset(0, 8),
@@ -439,7 +439,7 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
       height: 8,
       decoration: BoxDecoration(
         color: isActive
-            ? const Color(0xFF6366F1)
+            ? const Color(0xFF2563EB)
             : (isDone
                   ? const Color(0xFF10B981)
                   : (Theme.of(context).brightness == Brightness.dark

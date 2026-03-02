@@ -91,7 +91,7 @@ class NotificationsScreen extends StatelessWidget {
                         typeIcon = Icons.savings_rounded;
                         break;
                       default:
-                        typeColor = const Color(0xFF6366F1);
+                        typeColor = const Color(0xFF2563EB);
                         typeIcon = Icons.call_split_rounded;
                     }
 
@@ -107,7 +107,7 @@ class NotificationsScreen extends StatelessWidget {
                             ? null
                             : Border.all(
                                 color: const Color(
-                                  0xFF6366F1,
+                                  0xFF2563EB,
                                 ).withValues(alpha: 0.2),
                               ),
                       ),
@@ -188,7 +188,7 @@ class NotificationsScreen extends StatelessWidget {
                                     Icon(
                                       _paymentMethodIcon(notif.paymentMethod!),
                                       size: 14,
-                                      color: const Color(0xFF6366F1),
+                                      color: const Color(0xFF2563EB),
                                     ),
                                     const SizedBox(width: 6),
                                     Text(
@@ -258,7 +258,7 @@ class NotificationsScreen extends StatelessWidget {
                                   'Mark as read',
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: Color(0xFF6366F1),
+                                    color: Color(0xFF2563EB),
                                   ),
                                 ),
                               ),
@@ -365,7 +365,7 @@ class NotificationsScreen extends StatelessWidget {
                     : Icons.account_balance_rounded;
                 final color = w.type == 'cash'
                     ? const Color(0xFF10B981)
-                    : const Color(0xFF6366F1);
+                    : const Color(0xFF2563EB);
                 return _walletOption(
                   context: ctx,
                   icon: icon,

@@ -147,7 +147,7 @@ class _ProfileHeaderState extends State<_ProfileHeader> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+          colors: [Color(0xFF2563EB), Color(0xFF1E40AF)],
         ),
         borderRadius: BorderRadius.circular(20),
       ),
@@ -187,7 +187,7 @@ class _ProfileHeaderState extends State<_ProfileHeader> {
                   child: Container(
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF6366F1),
+                      color: const Color(0xFF2563EB),
                       shape: BoxShape.circle,
                       border: Border.all(color: Colors.white, width: 1.5),
                     ),
@@ -306,7 +306,7 @@ class _ProfileHeaderState extends State<_ProfileHeader> {
                   if (ctx.mounted) Navigator.pop(ctx);
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF6366F1),
+                  backgroundColor: const Color(0xFF2563EB),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -392,7 +392,7 @@ class _UpiSectionState extends State<_UpiSection> {
                 const Icon(
                   Icons.account_balance_wallet_rounded,
                   size: 20,
-                  color: Color(0xFF6366F1),
+                  color: Color(0xFF2563EB),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -423,7 +423,7 @@ class _UpiSectionState extends State<_UpiSection> {
                     height: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: Color(0xFF6366F1),
+                      color: Color(0xFF2563EB),
                     ),
                   )
                 else ...[
@@ -459,7 +459,7 @@ class _UpiSectionState extends State<_UpiSection> {
                   const Icon(
                     Icons.account_balance_wallet_rounded,
                     size: 20,
-                    color: Color(0xFF6366F1),
+                    color: Color(0xFF2563EB),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -487,7 +487,7 @@ class _UpiSectionState extends State<_UpiSection> {
                                 ? (isDark
                                       ? Colors.white
                                       : const Color(0xFF0F172A))
-                                : const Color(0xFF6366F1),
+                                : const Color(0xFF2563EB),
                           ),
                         ),
                       ],
@@ -496,7 +496,7 @@ class _UpiSectionState extends State<_UpiSection> {
                   Icon(
                     hasUpi ? Icons.edit_rounded : Icons.add_rounded,
                     size: 18,
-                    color: const Color(0xFF6366F1),
+                    color: const Color(0xFF2563EB),
                   ),
                 ],
               ),
@@ -559,7 +559,7 @@ class _WalletSectionState extends State<_WalletSection> {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF6366F1).withValues(alpha: 0.1),
+                      color: const Color(0xFF2563EB).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Icon(
@@ -568,7 +568,7 @@ class _WalletSectionState extends State<_WalletSection> {
                           : wallet.type == 'credit'
                           ? Icons.credit_card_rounded
                           : Icons.account_balance_rounded,
-                      color: const Color(0xFF6366F1),
+                      color: const Color(0xFF2563EB),
                       size: 20,
                     ),
                   ),
@@ -604,7 +604,7 @@ class _WalletSectionState extends State<_WalletSection> {
                     style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF6366F1),
+                      color: Color(0xFF2563EB),
                     ),
                   ),
                 ],
@@ -669,7 +669,7 @@ class _WalletSectionState extends State<_WalletSection> {
                   }
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF6366F1),
+                  backgroundColor: const Color(0xFF2563EB),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -712,7 +712,7 @@ class _WalletSectionState extends State<_WalletSection> {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF6366F1).withValues(alpha: 0.1),
+                  color: const Color(0xFF2563EB).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: const Row(
@@ -721,7 +721,7 @@ class _WalletSectionState extends State<_WalletSection> {
                     Icon(
                       Icons.tune_rounded,
                       size: 14,
-                      color: Color(0xFF6366F1),
+                      color: Color(0xFF2563EB),
                     ),
                     SizedBox(width: 4),
                     Text(
@@ -729,7 +729,7 @@ class _WalletSectionState extends State<_WalletSection> {
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF6366F1),
+                        color: Color(0xFF2563EB),
                       ),
                     ),
                   ],
@@ -748,7 +748,7 @@ class _WalletSectionState extends State<_WalletSection> {
                 color: widget.isDark ? const Color(0xFF1E293B) : Colors.white,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: const Color(0xFF6366F1).withValues(alpha: 0.2),
+                  color: const Color(0xFF2563EB).withValues(alpha: 0.2),
                   style: BorderStyle.solid,
                 ),
               ),
@@ -756,14 +756,14 @@ class _WalletSectionState extends State<_WalletSection> {
                 children: [
                   Icon(
                     Icons.account_balance_wallet_outlined,
-                    color: Color(0xFF6366F1),
+                    color: Color(0xFF2563EB),
                     size: 32,
                   ),
                   SizedBox(height: 8),
                   Text(
                     'Set up your wallets',
                     style: TextStyle(
-                      color: Color(0xFF6366F1),
+                      color: Color(0xFF2563EB),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -790,7 +790,7 @@ class _WalletSectionState extends State<_WalletSection> {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF6366F1).withValues(alpha: 0.1),
+                      color: const Color(0xFF2563EB).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Icon(
@@ -799,7 +799,7 @@ class _WalletSectionState extends State<_WalletSection> {
                           : w.type == 'credit'
                           ? Icons.credit_card_rounded
                           : Icons.account_balance_rounded,
-                      color: const Color(0xFF6366F1),
+                      color: const Color(0xFF2563EB),
                       size: 20,
                     ),
                   ),
@@ -893,7 +893,7 @@ class _SettingsSection extends StatelessWidget {
                 trailing: Switch.adaptive(
                   value: provider.darkMode,
                   onChanged: (v) => provider.darkMode = v,
-                  activeTrackColor: const Color(0xFF6366F1),
+                  activeTrackColor: const Color(0xFF2563EB),
                 ),
               ),
               Divider(
@@ -1070,7 +1070,7 @@ class _SettingsTile extends StatelessWidget {
       onTap: onTap,
       leading: Icon(
         icon,
-        color: titleColor ?? const Color(0xFF6366F1),
+        color: titleColor ?? const Color(0xFF2563EB),
         size: 22,
       ),
       title: Text(
