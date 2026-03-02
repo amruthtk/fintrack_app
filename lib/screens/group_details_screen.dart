@@ -120,497 +120,610 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
           backgroundColor: isDark
               ? const Color(0xFF0F172A)
               : const Color(0xFFF8FAFC),
-          body: Column(
-            children: [
-              // ── Static Header ──
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.only(
-                  top: MediaQuery.of(context).padding.top,
-                ),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: isDark
-                        ? [const Color(0xFF1E1B4B), const Color(0xFF0F172A)]
-                        : [const Color(0xFF2563EB), const Color(0xFF1E40AF)],
+          body: CustomScrollView(
+            slivers: [
+              // ── Pinned Header ──
+              SliverAppBar(
+                pinned: true,
+                expandedHeight: 240,
+                backgroundColor: isDark
+                    ? const Color(0xFF0F172A)
+                    : const Color(0xFF2563EB),
+                elevation: 0,
+                leading: IconButton(
+                  onPressed: () => context.pop(),
+                  icon: const Icon(
+                    Icons.arrow_back_rounded,
+                    color: Colors.white,
                   ),
                 ),
-                child: Column(
-                  children: [
-                    // Toolbar
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        IconButton(
-                          onPressed: () => context.pop(),
-                          icon: const Icon(
-                            Icons.arrow_back_rounded,
-                            color: Colors.white,
+                actions: [
+                  // Roulette Action
+                  IconButton(
+                    onPressed: () {
+                      final memberNames = group.memberIds.map((id) {
+                        if (id == userId) return 'You';
+                        final member = provider.getCachedUser(id);
+                        return member?.name.split(' ').first ?? 'User';
+                      }).toList();
+
+                      if (memberNames.length < 2) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Need at least 2 members to spin!'),
+                            backgroundColor: Color(0xFFF59E0B),
                           ),
-                        ),
-                        Row(
+                        );
+                        return;
+                      }
+
+                      context.push(
+                        '/spin-wheel',
+                        extra: {
+                          'memberNames': memberNames,
+                          'groupName': group.name,
+                        },
+                      );
+                    },
+                    icon: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Text('🎰', style: TextStyle(fontSize: 16)),
+                    ),
+                  ),
+                  PopupMenuButton<String>(
+                    icon: const Icon(
+                      Icons.more_vert_rounded,
+                      color: Colors.white,
+                    ),
+                    color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                    onSelected: (value) {
+                      if (value == 'delete') {
+                        _confirmDelete(context, provider, group);
+                      }
+                    },
+                    itemBuilder: (ctx) => [
+                      const PopupMenuItem(
+                        value: 'delete',
+                        child: Row(
                           children: [
-                            // Roulette Action
-                            IconButton(
-                              onPressed: () {
-                                final memberNames = group.memberIds.map((id) {
-                                  if (id == userId) return 'You';
-                                  final member = provider.getCachedUser(id);
-                                  return member?.name.split(' ').first ??
-                                      'User';
-                                }).toList();
-
-                                if (memberNames.length < 2) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        'Need at least 2 members to spin!',
-                                      ),
-                                      backgroundColor: Color(0xFFF59E0B),
-                                    ),
-                                  );
-                                  return;
-                                }
-
-                                context.push(
-                                  '/spin-wheel',
-                                  extra: {
-                                    'memberNames': memberNames,
-                                    'groupName': group.name,
-                                  },
-                                );
-                              },
-                              icon: Container(
-                                padding: const EdgeInsets.all(6),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.2),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Text(
-                                  '🎰',
-                                  style: TextStyle(fontSize: 16),
-                                ),
-                              ),
+                            Icon(
+                              Icons.delete_rounded,
+                              size: 18,
+                              color: Color(0xFFF43F5E),
                             ),
-                            PopupMenuButton<String>(
-                              icon: const Icon(
-                                Icons.more_vert_rounded,
-                                color: Colors.white,
-                              ),
-                              color: isDark
-                                  ? const Color(0xFF1E293B)
-                                  : Colors.white,
-                              onSelected: (value) {
-                                if (value == 'delete')
-                                  _confirmDelete(context, provider, group);
-                              },
-                              itemBuilder: (ctx) => [
-                                const PopupMenuItem(
-                                  value: 'delete',
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        Icons.delete_rounded,
-                                        size: 18,
-                                        color: Color(0xFFF43F5E),
-                                      ),
-                                      SizedBox(width: 8),
-                                      Text(
-                                        'Delete Group',
-                                        style: TextStyle(
-                                          color: Color(0xFFF43F5E),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
+                            SizedBox(width: 8),
+                            Text(
+                              'Delete Group',
+                              style: TextStyle(color: Color(0xFFF43F5E)),
                             ),
                           ],
                         ),
+                      ),
+                    ],
+                  ),
+                ],
+                flexibleSpace: FlexibleSpaceBar(
+                  background: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: isDark
+                            ? [const Color(0xFF1E1B4B), const Color(0xFF0F172A)]
+                            : [
+                                const Color(0xFF2563EB),
+                                const Color(0xFF1E40AF),
+                              ],
+                      ),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const SizedBox(height: 40),
+                        Container(
+                              width: 64,
+                              height: 64,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                group.emoji,
+                                style: const TextStyle(fontSize: 32),
+                              ),
+                            )
+                            .animate()
+                            .scale(curve: Curves.easeOutBack, duration: 400.ms)
+                            .fadeIn(),
+                        const SizedBox(height: 12),
+                        Text(
+                          group.name,
+                          style: GoogleFonts.inter(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                            letterSpacing: -0.5,
+                          ),
+                        ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2),
+                        Text(
+                          '${group.memberIds.length} members',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.white.withValues(alpha: 0.7),
+                          ),
+                        ).animate().fadeIn(delay: 400.ms),
                       ],
                     ),
-
-                    // Group Info
-                    const SizedBox(height: 10),
-                    Container(
-                          width: 64,
-                          height: 64,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            group.emoji,
-                            style: const TextStyle(fontSize: 32),
-                          ),
-                        )
-                        .animate()
-                        .scale(curve: Curves.easeOutBack, duration: 400.ms)
-                        .fadeIn(),
-
-                    const SizedBox(height: 12),
-                    Text(
-                      group.name,
-                      style: GoogleFonts.inter(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
-                        letterSpacing: -0.5,
-                      ),
-                    ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2),
-                    Text(
-                      '${group.memberIds.length} members',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.white.withValues(alpha: 0.7),
-                      ),
-                    ).animate().fadeIn(delay: 400.ms),
-                    const SizedBox(height: 24),
-                  ],
+                  ),
                 ),
               ),
 
-              // ── Scrollable Body ──
-              Expanded(
-                child: CustomScrollView(
-                  slivers: [
-                    // ── Stats Cards ──
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child:
-                                  _InfoCard(
-                                        title: 'Total Spent',
-                                        value: Helpers.formatCurrency(
-                                          totalGroupSpent,
-                                        ),
-                                        icon: Icons.receipt_long_rounded,
-                                        color: const Color(0xFF2563EB),
-                                        isDark: isDark,
-                                      )
-                                      .animate()
-                                      .fadeIn(delay: 400.ms)
-                                      .scale(
-                                        begin: const Offset(0.9, 0.9),
-                                        curve: Curves.easeOutBack,
-                                      ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child:
-                                  _InfoCard(
-                                        title: 'My Share',
-                                        value: Helpers.formatCurrency(myShare),
-                                        icon: Icons.person_rounded,
-                                        color: const Color(0xFFF59E0B),
-                                        isDark: isDark,
-                                      )
-                                      .animate()
-                                      .fadeIn(delay: 500.ms)
-                                      .scale(
-                                        begin: const Offset(0.9, 0.9),
-                                        curve: Curves.easeOutBack,
-                                      ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    // ── Settlements Card ──
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-                        child: GestureDetector(
-                          onTap: () => context.push('/settlements'),
-                          child: Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: isDark
-                                  ? const Color(0xFF1E293B)
-                                  : Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: const Color(
-                                  0xFF2563EB,
-                                ).withValues(alpha: 0.15),
-                                width: 1,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.03),
-                                  blurRadius: 10,
+              // ── Stats Cards ──
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child:
+                            _InfoCard(
+                                  title: 'Total Spent',
+                                  value: Helpers.formatCurrency(
+                                    totalGroupSpent,
+                                  ),
+                                  icon: Icons.receipt_long_rounded,
+                                  color: const Color(0xFF2563EB),
+                                  isDark: isDark,
+                                )
+                                .animate()
+                                .fadeIn(delay: 400.ms)
+                                .scale(
+                                  begin: const Offset(0.9, 0.9),
+                                  curve: Curves.easeOutBack,
                                 ),
-                              ],
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child:
+                            _InfoCard(
+                                  title: 'My Share',
+                                  value: Helpers.formatCurrency(myShare),
+                                  icon: Icons.person_rounded,
+                                  color: const Color(0xFFF59E0B),
+                                  isDark: isDark,
+                                )
+                                .animate()
+                                .fadeIn(delay: 500.ms)
+                                .scale(
+                                  begin: const Offset(0.9, 0.9),
+                                  curve: Curves.easeOutBack,
+                                ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // ── Settlements Card ──
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                  child: GestureDetector(
+                    onTap: () => context.push('/settlements'),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: const Color(
+                            0xFF2563EB,
+                          ).withValues(alpha: 0.15),
+                          width: 1,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.03),
+                            blurRadius: 10,
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: const Color(
+                                    0xFF2563EB,
+                                  ).withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Icon(
+                                  Icons.handshake_rounded,
+                                  color: Color(0xFF2563EB),
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  'Settlements',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    color: isDark
+                                        ? Colors.white
+                                        : const Color(0xFF0F172A),
+                                  ),
+                                ),
+                              ),
+                              Icon(
+                                Icons.arrow_forward_ios_rounded,
+                                size: 14,
+                                color: isDark
+                                    ? const Color(0xFF64748B)
+                                    : const Color(0xFF94A3B8),
+                              ),
+                            ],
+                          ),
+                          if (groupReceivables > 0 || groupPayables > 0) ...[
+                            const SizedBox(height: 14),
+                            Row(
                               children: [
-                                Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(8),
+                                if (groupReceivables > 0)
+                                  Expanded(
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 10,
+                                      ),
                                       decoration: BoxDecoration(
                                         color: const Color(
-                                          0xFF2563EB,
-                                        ).withValues(alpha: 0.1),
-                                        borderRadius: BorderRadius.circular(10),
+                                          0xFF10B981,
+                                        ).withValues(alpha: 0.08),
+                                        borderRadius: BorderRadius.circular(12),
                                       ),
-                                      child: const Icon(
-                                        Icons.handshake_rounded,
-                                        color: Color(0xFF2563EB),
-                                        size: 20,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Text(
-                                        'Settlements',
-                                        style: GoogleFonts.inter(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w700,
-                                          color: isDark
-                                              ? Colors.white
-                                              : const Color(0xFF0F172A),
-                                        ),
-                                      ),
-                                    ),
-                                    Icon(
-                                      Icons.arrow_forward_ios_rounded,
-                                      size: 14,
-                                      color: isDark
-                                          ? const Color(0xFF64748B)
-                                          : const Color(0xFF94A3B8),
-                                    ),
-                                  ],
-                                ),
-                                if (groupReceivables > 0 ||
-                                    groupPayables > 0) ...[
-                                  const SizedBox(height: 14),
-                                  Row(
-                                    children: [
-                                      if (groupReceivables > 0)
-                                        Expanded(
-                                          child: Container(
+                                      child: Row(
+                                        children: [
+                                          const Icon(
+                                            Icons.arrow_downward_rounded,
+                                            color: Color(0xFF10B981),
+                                            size: 16,
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'To Receive',
+                                                  style: TextStyle(
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.w500,
+                                                    color: const Color(
+                                                      0xFF10B981,
+                                                    ).withValues(alpha: 0.8),
+                                                  ),
+                                                ),
+                                                Text(
+                                                  Helpers.formatCurrency(
+                                                    groupReceivables,
+                                                  ),
+                                                  style: const TextStyle(
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.w700,
+                                                    color: Color(0xFF10B981),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Container(
                                             padding: const EdgeInsets.symmetric(
-                                              horizontal: 12,
-                                              vertical: 10,
+                                              horizontal: 6,
+                                              vertical: 2,
                                             ),
                                             decoration: BoxDecoration(
                                               color: const Color(
                                                 0xFF10B981,
-                                              ).withValues(alpha: 0.08),
+                                              ).withValues(alpha: 0.15),
                                               borderRadius:
-                                                  BorderRadius.circular(12),
+                                                  BorderRadius.circular(6),
                                             ),
-                                            child: Row(
+                                            child: Text(
+                                              '$receivableCount',
+                                              style: const TextStyle(
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w700,
+                                                color: Color(0xFF10B981),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                if (groupReceivables > 0 && groupPayables > 0)
+                                  const SizedBox(width: 10),
+                                if (groupPayables > 0)
+                                  Expanded(
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 10,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: const Color(
+                                          0xFFF59E0B,
+                                        ).withValues(alpha: 0.08),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          const Icon(
+                                            Icons.arrow_upward_rounded,
+                                            color: Color(0xFFF59E0B),
+                                            size: 16,
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
                                               children: [
-                                                const Icon(
-                                                  Icons.arrow_downward_rounded,
-                                                  color: Color(0xFF10B981),
-                                                  size: 16,
-                                                ),
-                                                const SizedBox(width: 6),
-                                                Expanded(
-                                                  child: Column(
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .start,
-                                                    children: [
-                                                      Text(
-                                                        'To Receive',
-                                                        style: TextStyle(
-                                                          fontSize: 10,
-                                                          fontWeight:
-                                                              FontWeight.w500,
-                                                          color:
-                                                              const Color(
-                                                                0xFF10B981,
-                                                              ).withValues(
-                                                                alpha: 0.8,
-                                                              ),
-                                                        ),
-                                                      ),
-                                                      Text(
-                                                        Helpers.formatCurrency(
-                                                          groupReceivables,
-                                                        ),
-                                                        style: const TextStyle(
-                                                          fontSize: 14,
-                                                          fontWeight:
-                                                              FontWeight.w700,
-                                                          color: Color(
-                                                            0xFF10B981,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                                Container(
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
-                                                        horizontal: 6,
-                                                        vertical: 2,
-                                                      ),
-                                                  decoration: BoxDecoration(
+                                                Text(
+                                                  'To Pay',
+                                                  style: TextStyle(
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.w500,
                                                     color: const Color(
-                                                      0xFF10B981,
-                                                    ).withValues(alpha: 0.15),
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          6,
-                                                        ),
+                                                      0xFFF59E0B,
+                                                    ).withValues(alpha: 0.8),
                                                   ),
-                                                  child: Text(
-                                                    '$receivableCount',
-                                                    style: const TextStyle(
-                                                      fontSize: 10,
-                                                      fontWeight:
-                                                          FontWeight.w700,
-                                                      color: Color(0xFF10B981),
-                                                    ),
+                                                ),
+                                                Text(
+                                                  Helpers.formatCurrency(
+                                                    groupPayables,
+                                                  ),
+                                                  style: const TextStyle(
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.w700,
+                                                    color: Color(0xFFF59E0B),
                                                   ),
                                                 ),
                                               ],
                                             ),
                                           ),
-                                        ),
-                                      if (groupReceivables > 0 &&
-                                          groupPayables > 0)
-                                        const SizedBox(width: 10),
-                                      if (groupPayables > 0)
-                                        Expanded(
-                                          child: Container(
+                                          Container(
                                             padding: const EdgeInsets.symmetric(
-                                              horizontal: 12,
-                                              vertical: 10,
+                                              horizontal: 6,
+                                              vertical: 2,
                                             ),
                                             decoration: BoxDecoration(
                                               color: const Color(
                                                 0xFFF59E0B,
-                                              ).withValues(alpha: 0.08),
+                                              ).withValues(alpha: 0.15),
                                               borderRadius:
-                                                  BorderRadius.circular(12),
+                                                  BorderRadius.circular(6),
                                             ),
-                                            child: Row(
-                                              children: [
-                                                const Icon(
-                                                  Icons.arrow_upward_rounded,
-                                                  color: Color(0xFFF59E0B),
-                                                  size: 16,
-                                                ),
-                                                const SizedBox(width: 6),
-                                                Expanded(
-                                                  child: Column(
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .start,
-                                                    children: [
-                                                      Text(
-                                                        'To Pay',
-                                                        style: TextStyle(
-                                                          fontSize: 10,
-                                                          fontWeight:
-                                                              FontWeight.w500,
-                                                          color:
-                                                              const Color(
-                                                                0xFFF59E0B,
-                                                              ).withValues(
-                                                                alpha: 0.8,
-                                                              ),
-                                                        ),
-                                                      ),
-                                                      Text(
-                                                        Helpers.formatCurrency(
-                                                          groupPayables,
-                                                        ),
-                                                        style: const TextStyle(
-                                                          fontSize: 14,
-                                                          fontWeight:
-                                                              FontWeight.w700,
-                                                          color: Color(
-                                                            0xFFF59E0B,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                                Container(
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
-                                                        horizontal: 6,
-                                                        vertical: 2,
-                                                      ),
-                                                  decoration: BoxDecoration(
-                                                    color: const Color(
-                                                      0xFFF59E0B,
-                                                    ).withValues(alpha: 0.15),
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          6,
-                                                        ),
-                                                  ),
-                                                  child: Text(
-                                                    '$payableCount',
-                                                    style: const TextStyle(
-                                                      fontSize: 10,
-                                                      fontWeight:
-                                                          FontWeight.w700,
-                                                      color: Color(0xFFF59E0B),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
+                                            child: Text(
+                                              '$payableCount',
+                                              style: const TextStyle(
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w700,
+                                                color: Color(0xFFF59E0B),
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                    ],
-                                  ),
-                                ] else ...[
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    children: [
-                                      const Icon(
-                                        Icons.check_circle_rounded,
-                                        color: Color(0xFF10B981),
-                                        size: 16,
+                                        ],
                                       ),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        'All settled up! 🎉',
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w500,
-                                          color: isDark
-                                              ? const Color(0xFF94A3B8)
-                                              : const Color(0xFF64748B),
-                                        ),
-                                      ),
-                                    ],
+                                    ),
                                   ),
-                                ],
                               ],
                             ),
-                          ),
-                        ).animate().fadeIn(delay: 550.ms).slideY(begin: 0.1),
+                          ] else ...[
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.check_circle_rounded,
+                                  color: Color(0xFF10B981),
+                                  size: 16,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'All settled up! 🎉',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                    color: isDark
+                                        ? const Color(0xFF94A3B8)
+                                        : const Color(0xFF64748B),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
                       ),
                     ),
+                  ).animate().fadeIn(delay: 550.ms).slideY(begin: 0.1),
+                ),
+              ),
 
-                    // ── Members Section ──
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
-                        child: Text(
-                          'Members',
+              // ── Members Section ──
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+                  child: Text(
+                    'Members',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                    ),
+                  ),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: SizedBox(
+                  height: 90,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    itemCount: group.memberIds.length + 1, // +1 for Add button
+                    itemBuilder: (context, index) {
+                      // Last item = Add Member button
+                      if (index == group.memberIds.length) {
+                        return Container(
+                              width: 72,
+                              margin: const EdgeInsets.only(right: 12),
+                              child: Column(
+                                children: [
+                                  GestureDetector(
+                                    onTap: () => _showAddMemberSheet(
+                                      context,
+                                      provider,
+                                      group,
+                                    ),
+                                    child: Container(
+                                      width: 48,
+                                      height: 48,
+                                      decoration: BoxDecoration(
+                                        color: isDark
+                                            ? const Color(0xFF334155)
+                                            : const Color(0xFFE2E8F0),
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: const Color(
+                                            0xFF2563EB,
+                                          ).withValues(alpha: 0.4),
+                                          width: 1.5,
+                                          strokeAlign:
+                                              BorderSide.strokeAlignOutside,
+                                        ),
+                                      ),
+                                      alignment: Alignment.center,
+                                      child: const Icon(
+                                        Icons.person_add_rounded,
+                                        color: Color(0xFF2563EB),
+                                        size: 22,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    'Add',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w500,
+                                      color: isDark
+                                          ? const Color(0xFF94A3B8)
+                                          : const Color(0xFF64748B),
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                              ),
+                            )
+                            .animate()
+                            .fadeIn(delay: (640 + index * 60).ms)
+                            .scale(begin: const Offset(0.5, 0.5));
+                      }
+
+                      final memberId = group.memberIds[index];
+                      final member = provider.getCachedUser(memberId);
+                      final isMe = memberId == userId;
+
+                      return Container(
+                            width: 72,
+                            margin: const EdgeInsets.only(right: 12),
+                            child: Column(
+                              children: [
+                                Container(
+                                  width: 48,
+                                  height: 48,
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: isMe
+                                          ? [
+                                              const Color(0xFF2563EB),
+                                              const Color(0xFF1E40AF),
+                                            ]
+                                          : [
+                                              const Color(0xFF334155),
+                                              const Color(0xFF475569),
+                                            ],
+                                    ),
+                                    shape: BoxShape.circle,
+                                    border: isMe
+                                        ? Border.all(
+                                            color: const Color(0xFF2563EB),
+                                            width: 2,
+                                          )
+                                        : null,
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    member?.initials ?? '?',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  isMe
+                                      ? 'You'
+                                      : (member?.name.split(' ').first ??
+                                            'User'),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: isMe
+                                        ? FontWeight.w600
+                                        : FontWeight.w400,
+                                    color: isDark
+                                        ? Colors.white
+                                        : const Color(0xFF0F172A),
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          )
+                          .animate()
+                          .fadeIn(delay: (640 + index * 60).ms)
+                          .scale(
+                            begin: const Offset(0.5, 0.5),
+                            curve: Curves.easeOutBack,
+                          );
+                    },
+                  ),
+                ),
+              ),
+
+              // ── Recent Transactions ──
+              if (groupSplits.isNotEmpty) ...[
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Recent Bills',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
@@ -619,276 +732,106 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
                                 : const Color(0xFF0F172A),
                           ),
                         ),
-                      ),
-                    ),
-                    SliverToBoxAdapter(
-                      child: SizedBox(
-                        height: 90,
-                        child: ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          itemCount:
-                              group.memberIds.length + 1, // +1 for Add button
-                          itemBuilder: (context, index) {
-                            // Last item = Add Member button
-                            if (index == group.memberIds.length) {
-                              return Container(
-                                    width: 72,
-                                    margin: const EdgeInsets.only(right: 12),
-                                    child: Column(
-                                      children: [
-                                        GestureDetector(
-                                          onTap: () => _showAddMemberSheet(
-                                            context,
-                                            provider,
-                                            group,
-                                          ),
-                                          child: Container(
-                                            width: 48,
-                                            height: 48,
-                                            decoration: BoxDecoration(
-                                              color: isDark
-                                                  ? const Color(0xFF334155)
-                                                  : const Color(0xFFE2E8F0),
-                                              shape: BoxShape.circle,
-                                              border: Border.all(
-                                                color: const Color(
-                                                  0xFF2563EB,
-                                                ).withValues(alpha: 0.4),
-                                                width: 1.5,
-                                                strokeAlign: BorderSide
-                                                    .strokeAlignOutside,
-                                              ),
-                                            ),
-                                            alignment: Alignment.center,
-                                            child: const Icon(
-                                              Icons.person_add_rounded,
-                                              color: Color(0xFF2563EB),
-                                              size: 22,
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(height: 6),
-                                        Text(
-                                          'Add',
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.w500,
-                                            color: isDark
-                                                ? const Color(0xFF94A3B8)
-                                                : const Color(0xFF64748B),
-                                          ),
-                                          textAlign: TextAlign.center,
-                                        ),
-                                      ],
-                                    ),
-                                  )
-                                  .animate()
-                                  .fadeIn(delay: (640 + index * 60).ms)
-                                  .scale(begin: const Offset(0.5, 0.5));
-                            }
-
-                            final memberId = group.memberIds[index];
-                            final member = provider.getCachedUser(memberId);
-                            final isMe = memberId == userId;
-
-                            return Container(
-                                  width: 72,
-                                  margin: const EdgeInsets.only(right: 12),
-                                  child: Column(
-                                    children: [
-                                      Container(
-                                        width: 48,
-                                        height: 48,
-                                        decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            colors: isMe
-                                                ? [
-                                                    const Color(0xFF2563EB),
-                                                    const Color(0xFF1E40AF),
-                                                  ]
-                                                : [
-                                                    const Color(0xFF334155),
-                                                    const Color(0xFF475569),
-                                                  ],
-                                          ),
-                                          shape: BoxShape.circle,
-                                          border: isMe
-                                              ? Border.all(
-                                                  color: const Color(
-                                                    0xFF2563EB,
-                                                  ),
-                                                  width: 2,
-                                                )
-                                              : null,
-                                        ),
-                                        alignment: Alignment.center,
-                                        child: Text(
-                                          member?.initials ?? '?',
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 16,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Text(
-                                        isMe
-                                            ? 'You'
-                                            : (member?.name.split(' ').first ??
-                                                  'User'),
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: isMe
-                                              ? FontWeight.w600
-                                              : FontWeight.w400,
-                                          color: isDark
-                                              ? Colors.white
-                                              : const Color(0xFF0F172A),
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                        textAlign: TextAlign.center,
-                                      ),
-                                    ],
-                                  ),
-                                )
-                                .animate()
-                                .fadeIn(delay: (640 + index * 60).ms)
-                                .scale(
-                                  begin: const Offset(0.5, 0.5),
-                                  curve: Curves.easeOutBack,
-                                );
-                          },
-                        ),
-                      ),
-                    ),
-
-                    // ── Recent Transactions ──
-                    if (groupSplits.isNotEmpty) ...[
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Recent Bills',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  color: isDark
-                                      ? Colors.white
-                                      : const Color(0xFF0F172A),
-                                ),
-                              ),
-                              GestureDetector(
-                                onTap: () => context.push(
-                                  '/group-bills/${widget.groupId}?name=${Uri.encodeComponent(group.name)}',
-                                ),
-                                child: Text(
-                                  'See all',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                    color: const Color(0xFF2563EB),
-                                  ),
-                                ),
-                              ),
-                            ],
+                        GestureDetector(
+                          onTap: () => context.push(
+                            '/group-bills/${widget.groupId}?name=${Uri.encodeComponent(group.name)}',
+                          ),
+                          child: Text(
+                            'See all',
+                            style: GoogleFonts.inter(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF2563EB),
+                            ),
                           ),
                         ),
-                      ),
-                      SliverPadding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        sliver: SliverList(
-                          delegate: SliverChildBuilderDelegate(
-                            (context, index) {
-                              final t = groupSplits[index];
-                              return Container(
-                                margin: const EdgeInsets.only(bottom: 10),
-                                padding: const EdgeInsets.all(12),
+                      ],
+                    ),
+                  ),
+                ),
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final t = groupSplits[index];
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? const Color(0xFF1E293B)
+                                : Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: const Color(
+                                0xFF2563EB,
+                              ).withValues(alpha: 0.05),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color: isDark
-                                      ? const Color(0xFF1E293B)
-                                      : Colors.white,
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: const Color(
-                                      0xFF2563EB,
-                                    ).withOpacity(0.05),
-                                  ),
+                                  color: const Color(
+                                    0xFF2563EB,
+                                  ).withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
-                                child: Row(
+                                child: Icon(
+                                  Helpers.getCategoryIcon(t.category),
+                                  color: const Color(0xFF2563EB),
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(10),
-                                      decoration: BoxDecoration(
-                                        color: const Color(
-                                          0xFF2563EB,
-                                        ).withOpacity(0.1),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Icon(
-                                        Helpers.getCategoryIcon(t.category),
-                                        color: const Color(0xFF2563EB),
-                                        size: 20,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            t.title.isNotEmpty
-                                                ? t.title
-                                                : t.category,
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w600,
-                                              color: isDark
-                                                  ? Colors.white
-                                                  : const Color(0xFF0F172A),
-                                            ),
-                                          ),
-                                          Text(
-                                            t.date,
-                                            style: TextStyle(
-                                              fontSize: 11,
-                                              color: isDark
-                                                  ? const Color(0xFF64748B)
-                                                  : const Color(0xFF94A3B8),
-                                            ),
-                                          ),
-                                        ],
+                                    Text(
+                                      t.title.isNotEmpty ? t.title : t.category,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: isDark
+                                            ? Colors.white
+                                            : const Color(0xFF0F172A),
                                       ),
                                     ),
                                     Text(
-                                      Helpers.formatCurrency(t.amount),
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w700,
-                                        color: Color(0xFF2563EB),
+                                      t.date,
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: isDark
+                                            ? const Color(0xFF64748B)
+                                            : const Color(0xFF94A3B8),
                                       ),
                                     ),
                                   ],
                                 ),
-                              );
-                            },
-                            childCount: groupSplits.length > 5
-                                ? 5
-                                : groupSplits.length,
+                              ),
+                              Text(
+                                Helpers.formatCurrency(t.amount),
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF2563EB),
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                      ),
-                    ],
-
-                    // Bottom padding
-                  ],
+                        );
+                      },
+                      childCount: groupSplits.length > 5
+                          ? 5
+                          : groupSplits.length,
+                    ),
+                  ),
                 ),
-              ),
+              ],
+              // Bottom padding
             ],
           ),
           floatingActionButton: FloatingActionButton.extended(
